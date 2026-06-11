@@ -1,4 +1,4 @@
-# TANUHai
+# TANUH_AI
 
 An Android voice-memo demo for the edge-AI candidate assignment. The app downloads
 two versioned models at runtime, caches them in app-private storage, and runs the
@@ -9,7 +9,9 @@ complete pipeline on the device:
 
 No model bytes or fallback model catalog are packaged in the APK.
 
-The Git repository root is `TANUHai`. The Android Studio project and application
+Repository: [`UpadhyayJitesh/TANUH_AI`](https://github.com/UpadhyayJitesh/TANUH_AI)
+
+The Git repository root is `TANUH_AI`. The Android Studio project and application
 source are contained in the `TANUHDemo/` directory.
 
 ## Build and run
