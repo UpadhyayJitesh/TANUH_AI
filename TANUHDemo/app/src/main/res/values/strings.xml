@@ -1,0 +1,33 @@
+<resources>
+    <string name="app_name">TANUHDemo</string>
+    <string name="title_voice_memo">Smart Voice Notes</string>
+    <string name="subtitle_voice_memo">On-device Vosk speech recognition and MobileBERT sentiment analysis</string>
+
+    <string name="prepare_models">Prepare AI Models</string>
+    <string name="record_memo">Record Memo</string>
+    <string name="stop_recording">Stop &amp; Analyze</string>
+    <string name="allow_metered">Allow downloads on mobile data</string>
+
+    <string name="models_not_ready">AI models are not ready. Connect to Wi-Fi and prepare them.</string>
+    <string name="reading_model_manifest">Reading model manifest</string>
+    <string name="models_ready">AI models are cached and ready for on-device inference.</string>
+    <string name="model_preparation_failed">Model preparation failed: %1$s</string>
+
+    <string name="transcript_label">Transcript</string>
+    <string name="no_memo_yet">No memo yet</string>
+    <string name="listening">Listening\u2026</string>
+    <string name="no_speech_detected">No speech detected</string>
+    <string name="microphone_permission_required">Microphone permission is required.</string>
+    <string name="loading_asr">Loading on-device speech recognition</string>
+    <string name="recording_offline">Recording and transcribing offline</string>
+    <string name="finishing_transcript">Finishing transcript</string>
+    <string name="asr_load_failed">Could not load speech recognition model: %1$s</string>
+    <string name="asr_error">Speech recognition error: %1$s</string>
+
+    <string name="classification_label">Sentiment Analysis</string>
+    <string name="waiting_for_transcript">Waiting for a transcript</string>
+    <string name="sentiment_after_transcription">Sentiment analysis runs after transcription</string>
+    <string name="sentiment_failed">Sentiment analysis failed</string>
+    <string name="text_model_error">Sentiment model error: %1$s</string>
+    <string name="pipeline_finished">On-device pipeline finished in %1$d ms</string>
+</resources>

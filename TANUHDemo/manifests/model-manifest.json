@@ -1,0 +1,23 @@
+{
+  "schemaVersion": 1,
+  "models": [
+    {
+      "id": "vosk-small-en-us",
+      "version": "0.15",
+      "runtime": "vosk",
+      "format": "zip",
+      "url": "https://raw.githubusercontent.com/UpadhyayJitesh/edge-ai-models/main/releases/download/voice-memo-v1/vosk-model-small-en-us-0.15.zip",
+      "sha256": "30f26242c4eb449f948e42cb302dd7a686cb29a3423a8367f99ff41780942498",
+      "size": 41205931
+    },
+    {
+      "id": "mobilebert-text-classifier",
+      "version": "1",
+      "runtime": "mediapipe-text",
+      "format": "tflite",
+      "url": "https://raw.githubusercontent.com/UpadhyayJitesh/edge-ai-models/main/releases/download/voice-memo-v1/mobilebert-text-classifier-v1.tflite",
+      "sha256": "9b45012ab143d88d61e10ea501d6c8763f7202b86fa987711519d89bfa2a88b1",
+      "size": 25707538
+    }
+  ]
+}
