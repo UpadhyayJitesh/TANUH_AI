@@ -1,6 +1,6 @@
 <resources>
     <string name="app_name">TANUHDemo</string>
-    <string name="title_voice_memo">Smart Voice Notes</string>
+    <string name="title_voice_memo">Edge Voice Assistant</string>
     <string name="subtitle_voice_memo">On-device Vosk speech recognition and MobileBERT sentiment analysis</string>
 
     <string name="prepare_models">Prepare AI Models</string>
