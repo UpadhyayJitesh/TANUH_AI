@@ -5,6 +5,7 @@ import android.content.pm.PackageManager
 import android.os.Bundle
 import android.os.SystemClock
 import android.util.Log
+import android.view.View
 import android.widget.Button
 import android.widget.CheckBox
 import android.widget.TextView
@@ -39,6 +40,8 @@ class MainActivity : AppCompatActivity(), RecognitionListener {
     private lateinit var classificationText: TextView
     private lateinit var prepareButton: Button
     private lateinit var recordButton: Button
+    private lateinit var modelInfoButton: Button
+    private lateinit var modelInfoText: TextView
     private lateinit var meteredCheck: CheckBox
 
     private lateinit var modelManager: ModelManager
@@ -77,6 +80,8 @@ class MainActivity : AppCompatActivity(), RecognitionListener {
         classificationText = findViewById(R.id.classificationText)
         prepareButton = findViewById(R.id.prepareButton)
         recordButton = findViewById(R.id.recordButton)
+        modelInfoButton = findViewById(R.id.modelInfoButton)
+        modelInfoText = findViewById(R.id.modelInfoText)
         meteredCheck = findViewById(R.id.meteredCheck)
         modelManager = ModelManager(applicationContext)
 
@@ -88,6 +93,7 @@ class MainActivity : AppCompatActivity(), RecognitionListener {
         recordButton.setOnClickListener {
             if (recording) stopRecording() else requestRecording()
         }
+        modelInfoButton.setOnClickListener { toggleModelInfo() }
     }
 
     private fun prepareModels() {
@@ -129,7 +135,31 @@ class MainActivity : AppCompatActivity(), RecognitionListener {
         Log.d(TAG, "Ready state: vosk=$voskReady, mobileBert=$textReady, overall=$ready")
         
         recordButton.isEnabled = ready
+        updateModelInfo()
         if (ready) showStatus(getString(R.string.models_ready))
+    }
+
+    private fun updateModelInfo() {
+        val vosk = installedModels[VOSK_MODEL_ID]
+        val sentiment = installedModels[TEXT_MODEL_ID]
+        modelInfoText.text = if (vosk != null && sentiment != null) {
+            getString(
+                R.string.model_info_template,
+                vosk.spec.version,
+                sentiment.spec.version,
+            )
+        } else {
+            getString(R.string.model_info_unavailable)
+        }
+    }
+
+    private fun toggleModelInfo() {
+        val shouldShow = modelInfoText.visibility != View.VISIBLE
+        modelInfoText.visibility = if (shouldShow) View.VISIBLE else View.GONE
+        modelInfoButton.setText(
+            if (shouldShow) R.string.hide_model_info else R.string.show_model_info,
+        )
+        Log.d(TAG, "Model information panel visible=$shouldShow")
     }
 
     private fun requestRecording() {

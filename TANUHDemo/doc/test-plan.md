@@ -33,6 +33,10 @@ enables recording.
 
 Note: the UI shows the current stage, not byte-level percentage progress.
 
+Open **Model info** after preparation. Expected: both models show their active
+manifest versions and `SHA-256 verified at activation`. This is persisted
+verification metadata; opening the panel does not rehash the files.
+
 ## 3. Connectivity policy
 
 1. Clear app storage so no models are cached.

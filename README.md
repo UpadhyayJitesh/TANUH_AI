@@ -95,6 +95,8 @@ The executable acceptance checklist is in
 - Activation uses a staged directory rename and records the prior version/path.
 - Both inference stages run on device.
 - Pipeline latency is surfaced in the UI.
+- An expandable model-info panel shows active Vosk and MobileBERT versions and
+  their integrity-verification state.
 - Model delivery and inference transitions are available through structured
   Logcat tags.
 

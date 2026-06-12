@@ -10,5 +10,7 @@
 6. Restart the app and show that the models are immediately reused.
 7. Point to the remote manifest and explain that changing a version triggers an
    OTA update without publishing a new APK.
-8. Filter Logcat by `ModelManager`, `ConnectivityPolicy`, `VoiceMemoActivity`,
+8. Open **Model info** and show the active versions and SHA-256 verification
+   state.
+9. Filter Logcat by `ModelManager`, `ConnectivityPolicy`, `VoiceMemoActivity`,
    and `MemoSentimentClassifier` to show each OTA and inference stage.

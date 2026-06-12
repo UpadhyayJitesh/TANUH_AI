@@ -90,5 +90,27 @@
             android:minHeight="72dp"
             android:padding="16dp"
             android:text="@string/waiting_for_transcript" />
+
+        <Button
+            android:id="@+id/modelInfoButton"
+            style="?attr/materialButtonOutlinedStyle"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="24dp"
+            android:drawableStart="@drawable/ic_info_outline"
+            android:drawablePadding="8dp"
+            android:text="@string/show_model_info" />
+
+        <TextView
+            android:id="@+id/modelInfoText"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:background="#E8F0FE"
+            android:lineSpacingExtra="2dp"
+            android:padding="16dp"
+            android:text="@string/model_info_unavailable"
+            android:textAppearance="@style/TextAppearance.MaterialComponents.Body2"
+            android:visibility="gone" />
     </LinearLayout>
 </ScrollView>

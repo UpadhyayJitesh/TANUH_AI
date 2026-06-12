@@ -30,4 +30,9 @@
     <string name="sentiment_failed">Sentiment analysis failed</string>
     <string name="text_model_error">Sentiment model error: %1$s</string>
     <string name="pipeline_finished">On-device pipeline finished in %1$d ms</string>
+
+    <string name="show_model_info">Model info</string>
+    <string name="hide_model_info">Hide model info</string>
+    <string name="model_info_unavailable">Active model information is unavailable. Prepare the AI models first.</string>
+    <string name="model_info_template">Vosk ASR\nVersion: %1$s\nStatus: Active\nIntegrity: SHA-256 verified at activation\n\nMobileBERT Sentiment\nVersion: %2$s\nStatus: Active\nIntegrity: SHA-256 verified at activation</string>
 </resources>
