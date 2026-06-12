@@ -9,7 +9,7 @@ flowchart LR
     Mic[Microphone] --> V[Vosk ASR]
     C --> V
     V --> T[Transcript]
-    T --> B[MobileBERT classifier]
+    T --> B[MobileBERT sentiment classifier]
     C --> B
     B --> UI[Result and latency]
 ```

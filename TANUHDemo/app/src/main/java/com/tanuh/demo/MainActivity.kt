@@ -14,7 +14,7 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
-import com.tanuh.demo.inference.MemoTextClassifier
+import com.tanuh.demo.inference.MemoSentimentClassifier
 import com.tanuh.demo.inference.TranscriptAccumulator
 import com.tanuh.demo.models.InstalledModel
 import com.tanuh.demo.models.ModelManager
@@ -28,7 +28,7 @@ import java.util.concurrent.Executors
 
 /**
  * Coordinates the demo workflow:
- * OTA preparation -> microphone capture -> Vosk ASR -> MobileBERT classification.
+ * OTA preparation -> microphone capture -> Vosk ASR -> MobileBERT sentiment classification.
  *
  * Model delivery and inference run off the main thread. UI state changes are
  * marshalled back to the activity thread.
@@ -46,7 +46,7 @@ class MainActivity : AppCompatActivity(), RecognitionListener {
     private var installedModels: Map<String, InstalledModel> = emptyMap()
     private var speechService: SpeechService? = null
     private var voskModel: Model? = null
-    private var textClassifier: MemoTextClassifier? = null
+    private var sentimentClassifier: MemoSentimentClassifier? = null
     private val transcriptAccumulator = TranscriptAccumulator()
     private var recording = false
     private var inferenceStartedAt = 0L
@@ -250,7 +250,7 @@ class MainActivity : AppCompatActivity(), RecognitionListener {
 
     private fun classifyTranscript(transcript: String) {
         if (transcript.isBlank()) {
-            Log.w(TAG, "Skipping classification for blank transcript")
+            Log.w(TAG, "Skipping sentiment classification for blank transcript")
             runOnUiThread {
                 classificationText.text = getString(R.string.no_speech_detected)
                 recordButton.isEnabled = true
@@ -265,16 +265,17 @@ class MainActivity : AppCompatActivity(), RecognitionListener {
             return
         }
 
-        Log.i(TAG, "Starting MobileBERT classification; characters=${transcript.length}")
+        Log.i(TAG, "Starting MobileBERT sentiment classification; characters=${transcript.length}")
         inferenceExecutor.execute {
             val result = runCatching {
-                if (textClassifier == null) {
-                    Log.i(TAG, "Creating MobileBERT classifier adapter")
-                    textClassifier = MemoTextClassifier(applicationContext, File(modelPath))
+                if (sentimentClassifier == null) {
+                    Log.i(TAG, "Creating MobileBERT sentiment classifier adapter")
+                    sentimentClassifier =
+                        MemoSentimentClassifier(applicationContext, File(modelPath))
                 } else {
-                    Log.d(TAG, "Reusing in-memory MobileBERT classifier")
+                    Log.d(TAG, "Reusing in-memory MobileBERT sentiment classifier")
                 }
-                textClassifier!!.classify(transcript)
+                sentimentClassifier!!.classify(transcript)
             }
             val latency = SystemClock.elapsedRealtime() - inferenceStartedAt
             runOnUiThread {
@@ -283,7 +284,7 @@ class MainActivity : AppCompatActivity(), RecognitionListener {
                     classificationText.text = it
                     showStatus(getString(R.string.pipeline_finished, latency))
                 }.onFailure {
-                    Log.e(TAG, "MobileBERT classification failed", it)
+                    Log.e(TAG, "MobileBERT sentiment classification failed", it)
                     classificationText.text = getString(R.string.sentiment_failed)
                     showStatus(getString(R.string.text_model_error, it.message.orEmpty()))
                 }
@@ -309,7 +310,7 @@ class MainActivity : AppCompatActivity(), RecognitionListener {
     override fun onDestroy() {
         Log.i(TAG, "Destroying activity and closing inference resources")
         releaseSpeechSession()
-        textClassifier?.close()
+        sentimentClassifier?.close()
         voskModel?.close()
         modelManager.close()
         inferenceExecutor.shutdownNow()

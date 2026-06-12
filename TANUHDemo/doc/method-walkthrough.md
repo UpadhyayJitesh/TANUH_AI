@@ -37,7 +37,7 @@ User taps Record Memo
        -> onFinalResult()
             -> TranscriptAccumulator.finish()
             -> MainActivity.classifyTranscript()
-                 -> MemoTextClassifier.classify()
+                 -> MemoSentimentClassifier.classify()
 ```
 
 # Part 1: Application startup
@@ -685,7 +685,7 @@ Runs the second model on the Vosk transcript and updates the UI.
 1. Reject a blank transcript.
 2. Read the active MobileBERT path.
 3. Move model work to `inferenceExecutor`.
-4. Create `MemoTextClassifier` once, or reuse it.
+4. Create `MemoSentimentClassifier` once, or reuse it.
 5. Call `classify(transcript)`.
 6. Calculate total latency from recording start.
 7. Return to the UI thread.
@@ -699,7 +699,7 @@ model's successful output available for diagnosis.
 
 ---
 
-## `MemoTextClassifier` initialization
+## `MemoSentimentClassifier` initialization
 
 ### Purpose
 
@@ -720,7 +720,7 @@ appropriate for a read-only local model file.
 
 ---
 
-## `MemoTextClassifier.classify()`
+## `MemoSentimentClassifier.classify()`
 
 ### Purpose
 
@@ -757,7 +757,7 @@ error. The Vosk model remains loaded for reuse.
 Closes:
 
 1. Active microphone service.
-2. MediaPipe text classifier.
+2. MediaPipe sentiment classifier.
 3. Vosk model.
 4. Model-manager executor.
 5. Inference executor.
@@ -802,11 +802,11 @@ When a flow fails, follow these methods in order.
 ## No sentiment
 
 1. `classifyTranscript()`
-2. `MemoTextClassifier` initialization
-3. `MemoTextClassifier.classify()`
+2. `MemoSentimentClassifier` initialization
+3. `MemoSentimentClassifier.classify()`
 
 Use:
 
 ```text
-tag:ModelManager | tag:ConnectivityPolicy | tag:VoiceMemoActivity | tag:MemoTextClassifier
+tag:ModelManager | tag:ConnectivityPolicy | tag:VoiceMemoActivity | tag:MemoSentimentClassifier
 ```

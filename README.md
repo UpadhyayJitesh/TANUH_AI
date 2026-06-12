@@ -5,7 +5,7 @@ two versioned models at runtime, caches them in app-private storage, and runs th
 complete pipeline on the device:
 
 1. Vosk Small English transcribes microphone audio.
-2. A MediaPipe MobileBERT classifier analyzes the transcript.
+2. A MediaPipe MobileBERT sentiment classifier analyzes the transcript.
 
 No model bytes or fallback model catalog are packaged in the APK.
 
@@ -71,7 +71,7 @@ Gradle module. Packages already follow extraction boundaries:
 - `models/ModelManager`: manifest resolution, download, checksum, staging,
   activation, cache registry, and previous-version metadata.
 - `models/ConnectivityPolicy`: validated-network and metered-network policy.
-- `inference/MemoTextClassifier`: MediaPipe TFLite text-classifier adapter.
+- `inference/MemoSentimentClassifier`: MediaPipe TFLite sentiment-classification adapter.
 - `MainActivity`: permission, Vosk streaming session, and workflow UI.
 
 See [architecture.md](TANUHDemo/doc/architecture.md),
@@ -103,12 +103,12 @@ The executable acceptance checklist is in
 Filter Logcat with:
 
 ```text
-tag:ModelManager | tag:ConnectivityPolicy | tag:VoiceMemoActivity | tag:MemoTextClassifier
+tag:ModelManager | tag:ConnectivityPolicy | tag:VoiceMemoActivity | tag:MemoSentimentClassifier
 ```
 
 The logs cover network policy, manifest download/validation, cache decisions,
 download duration, byte-size and SHA-256 verification, staging and activation,
-ASR lifecycle, text-model loading, classification latency, errors, and cleanup.
+ASR lifecycle, sentiment-model loading, classification latency, errors, and cleanup.
 Spoken transcript content and complete checksums are intentionally not logged.
 
 ## No speech detected

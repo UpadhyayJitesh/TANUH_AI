@@ -11,4 +11,4 @@
 7. Point to the remote manifest and explain that changing a version triggers an
    OTA update without publishing a new APK.
 8. Filter Logcat by `ModelManager`, `ConnectivityPolicy`, `VoiceMemoActivity`,
-   and `MemoTextClassifier` to show each OTA and inference stage.
+   and `MemoSentimentClassifier` to show each OTA and inference stage.

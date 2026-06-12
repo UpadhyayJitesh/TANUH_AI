@@ -12,7 +12,7 @@ launch to OTA model preparation, offline transcription, and sentiment analysis.
 | `ConnectivityPolicy` | Validated-network and unmetered/metered decision |
 | `ModelManifest` / `ModelSpec` | Remote JSON representation |
 | `TranscriptAccumulator` | Combines Vosk's segmented callbacks into one memo |
-| `MemoTextClassifier` | Loads the OTA MobileBERT TFLite file through MediaPipe Tasks |
+| `MemoSentimentClassifier` | Loads MobileBERT and performs positive/negative sentiment classification |
 
 ## 2. Overall flow
 
@@ -32,7 +32,7 @@ flowchart TD
     K --> L["User records memo"]
     L --> M["Vosk callbacks"]
     M --> N["TranscriptAccumulator"]
-    N --> O["MemoTextClassifier.classify()"]
+    N --> O["MemoSentimentClassifier.classify()"]
     O --> P["Transcript, sentiment, and latency shown"]
 ```
 
@@ -187,7 +187,7 @@ microphone service. The Vosk model itself remains in memory for faster reuse.
 `classifyTranscript()` runs after the complete transcript is assembled.
 
 1. The active MobileBERT file path is read from `installedModels`.
-2. `MemoTextClassifier` memory-maps the OTA `.tflite` file.
+2. `MemoSentimentClassifier` memory-maps the OTA `.tflite` file.
 3. MediaPipe `BaseOptions` receives the model buffer.
 4. `TextClassifier.createFromOptions()` initializes the runtime.
 5. `classify()` returns categories sorted by descending score.
@@ -242,13 +242,13 @@ Callbacks from background work use `runOnUiThread` before changing views.
 Use this Android Studio Logcat query:
 
 ```text
-tag:ModelManager | tag:ConnectivityPolicy | tag:VoiceMemoActivity | tag:MemoTextClassifier
+tag:ModelManager | tag:ConnectivityPolicy | tag:VoiceMemoActivity | tag:MemoSentimentClassifier
 ```
 
 - `ModelManager`: catalog, cache, download, integrity, staging, activation.
 - `ConnectivityPolicy`: validated and metered-network decision.
 - `VoiceMemoActivity`: permissions, ASR callbacks, pipeline, UI state.
-- `MemoTextClassifier`: model loading and inference duration.
+- `MemoSentimentClassifier`: sentiment-model loading and inference duration.
 
 Transcript contents and complete hashes are deliberately not logged.
 
@@ -263,7 +263,7 @@ Transcript contents and complete hashes are deliberately not logged.
 | Add automatic rollback | Activation registry plus runtime load reporting |
 | Replace Vosk | `MainActivity` ASR section or a new ASR adapter |
 | Replace sentiment labels | Train/publish a compatible TFLite classifier |
-| Change result formatting | `MemoTextClassifier.classify()` |
+| Change result formatting | `MemoSentimentClassifier.classify()` |
 | Move work across process death | WorkManager-backed model manager |
 
 ## 13. Recommended reading order
@@ -273,6 +273,6 @@ Transcript contents and complete hashes are deliberately not logged.
 3. `ModelManifest.kt`
 4. `ConnectivityPolicy.kt`
 5. `TranscriptAccumulator.kt`
-6. `MemoTextClassifier.kt`
+6. `MemoSentimentClassifier.kt`
 7. `manifests/model-manifest.json`
 8. `doc/test-plan.md`

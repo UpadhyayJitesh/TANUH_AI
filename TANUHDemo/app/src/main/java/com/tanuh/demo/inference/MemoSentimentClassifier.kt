@@ -10,18 +10,19 @@ import java.io.FileInputStream
 import java.nio.channels.FileChannel
 
 /**
- * Thin adapter around MediaPipe Tasks Text Classifier.
+ * Runs MobileBERT sentiment classification through MediaPipe Tasks.
  *
- * The model is supplied as an OTA-downloaded file instead of an APK asset.
+ * The OTA-downloaded model assigns positive and negative sentiment scores to
+ * the Vosk transcript. It is supplied as a file instead of an APK asset.
  */
-class MemoTextClassifier(
+class MemoSentimentClassifier(
     context: Context,
     modelFile: File,
 ) : AutoCloseable {
     private val classifier: TextClassifier
 
     init {
-        Log.i(TAG, "Loading text classifier: path=${modelFile.absolutePath}, bytes=${modelFile.length()}")
+        Log.i(TAG, "Loading sentiment classifier: path=${modelFile.absolutePath}, bytes=${modelFile.length()}")
         val startedAt = SystemClock.elapsedRealtime()
         val modelBuffer = FileInputStream(modelFile).channel.use { channel ->
             channel.map(FileChannel.MapMode.READ_ONLY, 0, channel.size())
@@ -34,15 +35,15 @@ class MemoTextClassifier(
             .setMaxResults(3)
             .build()
         classifier = TextClassifier.createFromOptions(context, options)
-        Log.i(TAG, "Text classifier loaded in ${SystemClock.elapsedRealtime() - startedAt} ms")
+        Log.i(TAG, "Sentiment classifier loaded in ${SystemClock.elapsedRealtime() - startedAt} ms")
     }
 
     fun classify(text: String): String {
         if (text.isBlank()) {
-            Log.w(TAG, "Classification skipped because transcript is blank")
+            Log.w(TAG, "Sentiment classification skipped because transcript is blank")
             return "No speech detected"
         }
-        Log.d(TAG, "Classifying transcript: characters=${text.length}")
+        Log.d(TAG, "Classifying transcript sentiment: characters=${text.length}")
         val startedAt = SystemClock.elapsedRealtime()
         val categories = classifier.classify(text)
             .classificationResult()
@@ -52,20 +53,20 @@ class MemoTextClassifier(
 
         Log.i(
             TAG,
-            "Classification completed in ${SystemClock.elapsedRealtime() - startedAt} ms; " +
+            "Sentiment classification completed in ${SystemClock.elapsedRealtime() - startedAt} ms; " +
                 "categories=${categories.size}",
         )
         return categories.joinToString(separator = "\n") { category ->
             "${category.categoryName()}: ${"%.1f".format(category.score() * 100)}%"
-        }.ifBlank { "Model returned no classification" }
+        }.ifBlank { "Model returned no sentiment classification" }
     }
 
     override fun close() {
-        Log.i(TAG, "Closing text classifier")
+        Log.i(TAG, "Closing sentiment classifier")
         classifier.close()
     }
 
     companion object {
-        private const val TAG = "MemoTextClassifier"
+        private const val TAG = "MemoSentimentClassifier"
     }
 }
