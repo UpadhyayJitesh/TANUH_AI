@@ -732,12 +732,12 @@ Converts transcript text into human-readable sentiment scores.
 2. Call MediaPipe `classifier.classify(text)`.
 3. Flatten categories from the classification result.
 4. Sort categories by descending score.
-5. Convert scores into percentages.
-6. Return lines such as:
+5. Read the category name, optional localized display name, class index, and
+   confidence score.
+6. Return one compact, naturally wrapping line per category:
 
 ```text
-negative: 90.1%
-positive: 9.9%
+negative | Index: 0 | Confidence: 90.1%
 ```
 
 ### Model limitation

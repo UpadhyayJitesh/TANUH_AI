@@ -57,7 +57,13 @@ class MemoSentimentClassifier(
                 "categories=${categories.size}",
         )
         return categories.joinToString(separator = "\n") { category ->
-            "${category.categoryName()}: ${"%.1f".format(category.score() * 100)}%"
+            val categoryName = category.categoryName().ifBlank { "Unlabeled" }
+            val displayName = category.displayName()
+                .takeIf { it.isNotBlank() && it != categoryName }
+                ?.let { " | Display: $it" }
+                .orEmpty()
+            "$categoryName$displayName | Index: ${category.index()} | " +
+                "Confidence: ${"%.1f".format(category.score() * 100)}%"
         }.ifBlank { "Model returned no sentiment classification" }
     }
 

@@ -191,7 +191,8 @@ microphone service. The Vosk model itself remains in memory for faster reuse.
 3. MediaPipe `BaseOptions` receives the model buffer.
 4. `TextClassifier.createFromOptions()` initializes the runtime.
 5. `classify()` returns categories sorted by descending score.
-6. The UI displays the labels, percentages, and total pipeline latency.
+6. The UI displays one compact, naturally wrapping line per result with category
+   name, optional display name, class index, confidence, and pipeline latency.
 
 The supplied model is a binary sentiment model. It always distributes confidence
 between positive and negative labels. A neutral reminder such as “Call me at
