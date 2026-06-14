@@ -86,7 +86,9 @@ The standalone SDK implementation is available in
 [`UpadhyayJitesh/TANUH_SDK`](https://github.com/UpadhyayJitesh/TANUH_SDK).
 The executable acceptance checklist is in
 [test-plan.md](TANUHDemo/doc/test-plan.md), and model hosting instructions are in
-[model-publishing.md](TANUHDemo/doc/model-publishing.md).
+[model-publishing.md](TANUHDemo/doc/model-publishing.md). Assignment stretch-goal
+coverage and remaining work are summarized in
+[stretch-goals.md](TANUHDemo/doc/stretch-goals.md).
 
 ## Requirement coverage
 
