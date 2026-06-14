@@ -77,8 +77,13 @@ extracted into independent modules:
 
 See [architecture.md](TANUHDemo/doc/architecture.md),
 [code-flow.md](TANUHDemo/doc/code-flow.md), the detailed
-[method-walkthrough.md](TANUHDemo/doc/method-walkthrough.md), and
-[sdk-design.md](TANUHDemo/doc/sdk-design.md).
+[method-walkthrough.md](TANUHDemo/doc/method-walkthrough.md),
+[sdk-design.md](TANUHDemo/doc/sdk-design.md) for the initial SDK proposal, and
+[sdk-design_V2.md](TANUHDemo/doc/sdk-design_V2.md) for the implemented
+`TANUH_SDK 0.1.0` design and public API.
+
+The standalone SDK implementation is available in
+[`UpadhyayJitesh/TANUH_SDK`](https://github.com/UpadhyayJitesh/TANUH_SDK).
 The executable acceptance checklist is in
 [test-plan.md](TANUHDemo/doc/test-plan.md), and model hosting instructions are in
 [model-publishing.md](TANUHDemo/doc/model-publishing.md).
@@ -135,16 +140,18 @@ If a recording is still empty:
 
 - WorkManager foreground/resumable downloads. The demo uses a foreground
   activity-owned download to keep behavior easy to inspect.
-- Automatic rollback after runtime load failure. Previous-version metadata is
-  retained, but a rollback API and retry policy are not yet exposed.
+- Automatic rollback is not wired into this demo application. The standalone
+  `TANUH_SDK 0.1.0` implements runtime-load reporting and restoration of a valid
+  previous version.
 - Cache eviction, delta updates, staged rollout, and hardware delegate selection.
 - A task-specific fine-tuned memo classifier.
-- Multi-module Gradle extraction. The production module design is documented,
-  while the demo avoids adding modules that would contain little implementation.
+- Direct consumption of `TANUH_SDK` by this demo. The demo retains its original
+  in-app model manager so the submitted implementation remains independently
+  inspectable.
 
 ## What I would do next
 
 1. Move downloads to WorkManager with resumable HTTP range requests.
-2. Add load health checks and automatic rollback.
+2. Migrate the demo from its in-app model manager to the standalone `TANUH_SDK`.
 3. Fine-tune/evaluate the classifier on voice-memo intent labels.
-4. Extract `model-manager` into the SDK described in the design document.
+4. Add signed manifests, staged rollout, and automatic cache retention to the SDK.
