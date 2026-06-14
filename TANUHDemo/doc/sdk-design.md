@@ -4,11 +4,12 @@ This document answers the assignment's SDK design questions directly. It
 describes how the OTA download and model-management code demonstrated in
 TANUHDemo would become a standalone Android SDK for other application teams.
 
-The current demo implements a focused subset: remote manifest loading, network
+Edge Voice Assistant implements a focused subset: remote manifest loading, network
 policy, version comparison, size and SHA-256 verification, staged activation,
 local reuse, and previous-version metadata. Resumable downloads, automatic
 runtime-load rollback, staged rollout, cache eviction, and the multi-module SDK
-below are proposed production work rather than claims about the demo.
+described in this document are proposed production work rather than claims about
+the current application.
 
 ## 6. How would the OTA and model-management logic become a reusable SDK?
 

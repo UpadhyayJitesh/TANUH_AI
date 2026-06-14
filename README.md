@@ -65,8 +65,9 @@ keeping the same OTA model-delivery and on-device inference architecture.
 
 ## Architecture
 
-The candidate timebox favors a small, finished slice, so the app remains one
-Gradle module. Packages already follow extraction boundaries:
+The assignment's 6-8 hour timebox favors a small, complete implementation, so
+the app remains one Gradle module. Packages follow boundaries that can later be
+extracted into independent modules:
 
 - `models/ModelManager`: manifest resolution, download, checksum, staging,
   activation, cache registry, and previous-version metadata.
@@ -138,8 +139,8 @@ If a recording is still empty:
   retained, but a rollback API and retry policy are not yet exposed.
 - Cache eviction, delta updates, staged rollout, and hardware delegate selection.
 - A task-specific fine-tuned memo classifier.
-- Multi-module Gradle extraction. The proposed module shape is documented rather
-  than represented by empty modules.
+- Multi-module Gradle extraction. The production module design is documented,
+  while the demo avoids adding modules that would contain little implementation.
 
 ## What I would do next
 

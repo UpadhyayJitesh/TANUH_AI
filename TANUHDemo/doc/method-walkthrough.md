@@ -1,4 +1,4 @@
-# TANUHDemo Method Walkthrough
+# Edge Voice Assistant Method Walkthrough
 
 This guide explains the important methods in execution order. It is intended as
 a code handoff: what calls each method, what it does, why it exists, what thread

@@ -1,6 +1,6 @@
-# TANUHDemo Code Flow
+# Edge Voice Assistant Code Flow
 
-This document explains how Smart Voice Notes moves through the code from app
+This document explains how Edge Voice Assistant moves through the code from app
 launch to OTA model preparation, offline transcription, and sentiment analysis.
 
 ## 1. Main components

@@ -27,20 +27,25 @@ becoming active.
 ```text
 files/edge-models/
   vosk-small-en-us/
-    0.15/
+    <active-version>/
   mobilebert-text-classifier/
-    1/
+    <active-version>/
 ```
 
 The active path and version are stored in private preferences. The previous path
-and version are retained as rollback metadata.
+and version are retained as last-known-good metadata for a future automatic
+rollback implementation. The current demo prevents failed candidates from
+replacing the active version but does not automatically roll back after a
+runtime load failure.
 
 ## Scope decision
 
-The earlier proposed repository shape is appropriate for a larger platform, but
-creating many nearly empty Gradle modules would add build and DI overhead without
-improving this demo. The code uses package-level boundaries now. The intended
-production modules are:
+A production platform could separate model delivery, storage, networking,
+integrity, observability, inference adapters, and feature code into independent
+Gradle modules. For this time-boxed demo, creating mostly small modules would add
+build and dependency-injection overhead without improving the demonstrated
+behavior. The current implementation therefore uses clear package-level
+boundaries within one application module. A production extraction could use:
 
 ```text
 app

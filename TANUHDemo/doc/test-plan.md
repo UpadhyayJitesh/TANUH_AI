@@ -1,8 +1,8 @@
-# TANUHDemo Test Plan
+# Edge Voice Assistant Test Plan
 
-This plan describes the behavior implemented by the current Smart Voice Notes
-demo. MobileBERT performs sentiment classification (`positive` or `negative`);
-it does not classify reminders, tasks, or action items.
+This plan describes the behavior implemented by the Edge Voice Assistant demo.
+MobileBERT performs sentiment classification (`positive` or `negative`); it
+does not classify reminders, tasks, or action items.
 
 ## 1. Fresh install
 
@@ -105,7 +105,7 @@ Note: resumable/range downloads are not implemented.
 ## 10. Inference workflow
 
 1. Ensure both models are ready.
-2. Record: “The project presentation went very well and I am happy.”
+2. Record: "The project presentation went very well and I am happy."
 3. Stop recording after several seconds.
 
 Expected:
@@ -114,8 +114,8 @@ Expected:
 - MobileBERT displays positive and negative sentiment scores.
 - The UI displays total pipeline latency.
 
-For a negative example, record: “The release failed and the result was very
-disappointing.”
+For a negative example, record: "The release failed and the result was very
+disappointing."
 
 Neutral reminders may still receive a strong positive or negative score because
 this model has no neutral, reminder, or task label.
