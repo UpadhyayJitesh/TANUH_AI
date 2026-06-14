@@ -196,7 +196,7 @@ The implementation does not report whether inference used CPU, GPU, NNAPI, or
 NPU. It also does not include a Firebase, OpenTelemetry, or other telemetry
 export adapter.
 
-## Interview Summary
+## Summary
 
 The strongest completed stretch goal is **integrity and safety**:
 
