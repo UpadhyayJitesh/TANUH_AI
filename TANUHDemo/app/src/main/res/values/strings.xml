@@ -35,4 +35,27 @@
     <string name="hide_model_info">Hide model info</string>
     <string name="model_info_unavailable">Active model information is unavailable. Prepare the AI models first.</string>
     <string name="model_info_template">Vosk ASR\nVersion: %1$s\nStatus: Active\nIntegrity: SHA-256 verified at activation\n\nMobileBERT Sentiment\nVersion: %2$s\nStatus: Active\nIntegrity: SHA-256 verified at activation</string>
+
+    <!-- Launcher -->
+    <string name="launcher_subtitle">Choose what you want to try</string>
+    <string name="launcher_option_voice_title">1. Voice memo (existing flow)</string>
+    <string name="launcher_option_voice_desc">On-device Vosk speech recognition followed by MobileBERT sentiment analysis.</string>
+    <string name="launcher_option_sdk_title">2. SDK exploration: image models</string>
+    <string name="launcher_option_sdk_desc">JSON-configured preprocessing (OpenCV) and ONNX / LiteRT models loaded from a device path. Pick suspicious images from the gallery and compare loading strategies.</string>
+
+    <!-- SDK exploration screen -->
+    <string name="sdk_title">SDK exploration: image models</string>
+    <string name="sdk_config_label">SDK config (JSON)</string>
+    <string name="sdk_apply">Apply</string>
+    <string name="sdk_reset">Default</string>
+    <string name="sdk_save">Save</string>
+    <string name="sdk_import_models">Import models into app storage</string>
+    <string name="sdk_validate">Validate</string>
+    <string name="sdk_load">Load models</string>
+    <string name="sdk_unload">Unload</string>
+    <string name="sdk_pick">Pick images</string>
+    <string name="sdk_run">Run</string>
+    <string name="sdk_no_images">No images picked yet</string>
+    <string name="sdk_report_label">Report</string>
+    <string name="sdk_copy">Copy report</string>
 </resources>

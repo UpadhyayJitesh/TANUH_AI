@@ -1,0 +1,100 @@
+{
+  "_comment": "TANUH edge SDK config, schema 2. Keys starting with '_' are ignored. Full reference: doc/sdk-exploration.md. This default reproduces avni-client tools/edge-model/tanuh-ensemble-override.json (QC Oct 2026 pipeline) bit-exactly, verified on device. Schema 1 configs (top-level image/preprocessing/postprocessing) are still accepted.",
+  "schema_version": 2,
+
+  "_models_comment": "Every model the SDK knows about. name = id used in reports and run_models. path = absolute path; placeholders ${FILES} (app-private, default), ${EXTERNAL_FILES}, ${CACHE}. engine = onnx | litert | auto. pipeline = which entry under 'pipelines' prepares its input and reads its output (may be omitted when only one pipeline exists). enabled (default true) = runs when run_models is absent. Optional: input_layout (CHW/HWC per-model override), sha256.",
+  "models": [
+    { "name": "model6",   "engine": "onnx", "pipeline": "oral-image", "path": "${FILES}/models/mvit2_fold1_6_latest_traced_(model6).onnx" },
+    { "name": "model8",   "engine": "onnx", "pipeline": "oral-image", "path": "${FILES}/models/mvit2_fold1_8_traced_(model8).onnx" },
+    { "name": "model8-2", "engine": "onnx", "pipeline": "oral-image", "path": "${FILES}/models/mvit2_fold2_8_latest_traced_(model8-2).onnx" },
+
+    { "_comment": "LiteRT float32 exports of the same folds (onnx2tf, NCHW input kept; logits match ONNX within 1e-4). Need edgesdk.litert=true in gradle.properties. To use: enabled true here, false on the ONNX ones.",
+      "name": "model6-tfl",   "engine": "litert", "pipeline": "oral-image", "enabled": false, "path": "${FILES}/models/model6_float32.tflite" },
+    { "name": "model8-tfl",   "engine": "litert", "pipeline": "oral-image", "enabled": false, "path": "${FILES}/models/model8_float32.tflite" },
+    { "name": "model8-2-tfl", "engine": "litert", "pipeline": "oral-image", "enabled": false, "path": "${FILES}/models/model8-2_float32.tflite" }
+  ],
+
+  "_run_models_comment": "Optional override. Absent = every model with enabled=true, in the order above. Present = exactly these names, in this order (enabled flags ignored), e.g. \"run_models\": [\"model8\", \"model8-tfl\"]. Unknown names fail on Apply.",
+
+  "_pipelines_comment": "Named recipes. Each declares input (type + type-specific steps + the named, typed tensors it produces), output (how one model's raw output becomes a label) and combine (how the models sharing this pipeline are combined). Models of different pipelines never get combined with each other. input.type: image (implemented); text, audio, tensor are reserved for later.",
+  "pipelines": {
+    "oral-image": {
+      "input": {
+        "type": "image",
+
+        "_decode_comment": "apply_exif: rotate/flip upright from the photo's EXIF tag like cv2.imread (keep true; the sample photos are orientation 6). max_decode_side: 0 = full resolution (QC parity); N > 0 = decoder halves the image until its long side is between N and 2N (faster, less memory, no longer bit-identical to QC).",
+        "decode": { "apply_exif": true, "max_decode_side": 0 },
+
+        "_steps_comment": "Ordered OpenCV ops on a BGR image. resize {size, mode stretch|letterbox|short_side|long_side, interpolation nearest|linear|cubic|area|lanczos, pad_value}, center_crop {size}, gaussian_blur {ksize, sigma}, gray_world {mean_target}, clip {min, max}, round {decimals}, to_uint8, scale {divide_by | multiply}, normalize {mean, std, order}.",
+        "steps": [
+          { "op": "resize", "size": [256, 256], "mode": "letterbox", "interpolation": "cubic", "pad_value": 0 },
+          { "op": "gray_world", "mean_target": 128 },
+          { "op": "clip", "min": 0, "max": 255 },
+          { "op": "round", "decimals": 1 },
+          { "op": "to_uint8" },
+          { "op": "scale", "divide_by": 255 }
+        ],
+
+        "_tensors_comment": "What the steps produce for the model. An image pipeline produces exactly one float32 tensor. name = the model's input name (omit to bind by position). layout CHW|HWC, channel_order RGB|BGR, shape is checked.",
+        "tensors": [
+          { "name": "input", "dtype": "float32", "layout": "CHW", "channel_order": "BGR", "shape": [1, 3, 256, 256] }
+        ]
+      },
+
+      "_output_comment": "decoder: sigmoid-binary (p = sigmoid(logit)) | softmax-argmax | raw. threshold_inclusive true = p >= threshold is positive (QC rule). labels: [negative, positive] or class names.",
+      "output": {
+        "decoder": "sigmoid-binary",
+        "threshold": 0.5,
+        "threshold_inclusive": true,
+        "labels": ["Negative", "Positive"]
+      },
+
+      "_combine_comment": "unanimous-and (avni default: every model must say positive) | any-or | majority | mean-probability | none.",
+      "combine": "unanimous-and"
+    }
+  },
+
+  "loading": {
+    "_comment": "strategy = how the file reaches the runtime. path: runtime opens the file itself (recommended). mmap: FileChannel.map -> direct buffer (same memory as path for .onnx; ORT still copies weights natively). bytes: whole file into a Java ByteArray first (extra heap copy; baseline only). keep_loaded false = load, run, close each model per input (lowest peak memory, pays load time every time). warmup_runs 0-10 = untimed throw-away inferences the first time a loaded model is used; 0 shows the real first-scan time, 1 for fair speed comparisons.",
+    "strategy": "path",
+    "keep_loaded": true,
+    "warmup_runs": 0
+  },
+
+  "onnx": {
+    "_comment": "Applies to every engine=onnx model. Defaults copied from avni OnnxEngine (3 resident sessions on low-RAM phones). intra_op_threads: threads per inference. cpu_arena / memory_pattern: true = slightly faster repeat runs, more native memory held. optimization_level: none | basic | extended | all. execution_provider: cpu | xnnpack | nnapi. config_entries: raw ORT session keys, e.g. {\"session.intra_op.allow_spinning\": \"0\"}.",
+    "intra_op_threads": 4,
+    "cpu_arena": false,
+    "memory_pattern": false,
+    "optimization_level": "all",
+    "execution_provider": "cpu",
+    "config_entries": {}
+  },
+
+  "litert": {
+    "_comment": "Applies to every engine=litert model. accelerator: cpu | gpu (gpu also needs the litert-gpu dependency, not added yet). LiteRT memory-maps the .tflite from its path.",
+    "accelerator": "cpu"
+  },
+
+  "diagnostics": {
+    "_comment": "Test-bench extras, not needed in production. measure_pss: include process PSS in memory lines. verify_sha256: stream-hash model files on Validate. compare_with_reference: also run avni's Kotlin preprocessor on reference_pipeline (default: first image pipeline) with reference_params (= avni override 'input.params') and report tensor and logit differences.",
+    "measure_pss": true,
+    "verify_sha256": false,
+    "compare_with_reference": true,
+    "reference_pipeline": "oral-image",
+    "reference_params": {
+      "size": [256, 256],
+      "resize_mode": "letterbox",
+      "pad_value": 0,
+      "interpolation": "cubic",
+      "channel_order": "BGR",
+      "layout": "CHW",
+      "scale": 0.00392156862745098,
+      "mean_target": 128,
+      "round_decimals": 1,
+      "uint8_cast": true,
+      "uint8_round": true,
+      "rounding": "numpy"
+    }
+  }
+}

@@ -34,7 +34,7 @@ import java.util.concurrent.Executors
  * Model delivery and inference run off the main thread. UI state changes are
  * marshalled back to the activity thread.
  */
-class MainActivity : AppCompatActivity(), RecognitionListener {
+class VoiceMemoActivity : AppCompatActivity(), RecognitionListener {
     private lateinit var statusText: TextView
     private lateinit var transcriptText: TextView
     private lateinit var classificationText: TextView
@@ -68,7 +68,7 @@ class MainActivity : AppCompatActivity(), RecognitionListener {
         super.onCreate(savedInstanceState)
         Log.i(TAG, "Creating voice memo activity")
         enableEdgeToEdge()
-        setContentView(R.layout.activity_main)
+        setContentView(R.layout.activity_voice_memo)
         ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.main)) { view, insets ->
             val bars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
             view.setPadding(bars.left, bars.top, bars.right, bars.bottom)

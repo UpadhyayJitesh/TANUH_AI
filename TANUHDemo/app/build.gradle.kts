@@ -33,6 +33,12 @@ android {
     kotlinOptions {
         jvmTarget = "11"
     }
+    packaging {
+        jniLibs {
+            // OpenCV's trimmed AAR bundles libc++_shared.so only for x86; app/src/main/jniLibs supplies all ABIs.
+            pickFirsts += "**/libc++_shared.so"
+        }
+    }
 }
 
 dependencies {
@@ -44,6 +50,11 @@ dependencies {
     implementation(libs.androidx.constraintlayout)
     implementation(libs.vosk.android)
     implementation(libs.mediapipe.tasks.text)
+
+    // SDK exploration: the candidate SDK module + the trimmed OpenCV runtime it compiles against.
+    // app/libs/opencv-4140-android-trimmed.aar is the same trimmed AAR the avni tanuh flavour uses.
+    implementation(project(":edgesdk"))
+    implementation(files("libs/opencv-4140-android-trimmed.aar"))
     testImplementation(libs.junit)
     testImplementation(libs.json)
     androidTestImplementation(libs.androidx.junit)

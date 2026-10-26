@@ -1,0 +1,1385 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>SDK Config Reference</title>
+<style>
+:root {
+  --bg: #ffffff; --fg: #1f2328; --muted: #59636e; --line: #d1d9e0; --soft: #f6f8fa;
+  --accent: #0b6bcb; --code-bg: #f3f4f6; --side: #fafbfc;
+}
+@media (prefers-color-scheme: dark) {
+  :root { --bg: #0f1115; --fg: #e6e8eb; --muted: #9aa4b2; --line: #2b313a; --soft: #161a21;
+          --accent: #5aa9ff; --code-bg: #1b2028; --side: #12151b; }
+}
+* { box-sizing: border-box; }
+html { scroll-behavior: smooth; }
+body { margin: 0; background: var(--bg); color: var(--fg);
+       font: 15px/1.6 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; }
+.layout { display: grid; grid-template-columns: 280px minmax(0, 1fr); min-height: 100vh; }
+nav { position: sticky; top: 0; height: 100vh; overflow-y: auto; padding: 24px 16px 40px;
+      background: var(--side); border-right: 1px solid var(--line); font-size: 13.5px; }
+nav .brand { font-weight: 700; font-size: 15px; margin: 0 0 4px 8px; }
+nav .sub { color: var(--muted); margin: 0 0 16px 8px; font-size: 12.5px; }
+nav ul { list-style: none; margin: 0; padding-left: 0; }
+nav ul ul { padding-left: 14px; }
+nav a { display: block; padding: 3px 8px; border-radius: 6px; color: var(--fg); text-decoration: none; }
+nav a:hover { background: var(--soft); color: var(--accent); }
+nav a.active { color: var(--accent); background: var(--soft); font-weight: 600; }
+main { padding: 32px 48px 80px; max-width: 1100px; min-width: 0; }
+p code, li code { overflow-wrap: anywhere; }
+h1 { font-size: 30px; margin: 0 0 12px; }
+h2 { font-size: 22px; margin: 44px 0 12px; padding-bottom: 6px; border-bottom: 1px solid var(--line); }
+h3 { font-size: 18px; margin: 32px 0 8px; }
+h4 { font-size: 15.5px; margin: 26px 0 6px; color: var(--accent); }
+h2, h3, h4 { scroll-margin-top: 16px; }
+a { color: var(--accent); }
+hr { border: 0; border-top: 1px solid var(--line); margin: 32px 0; }
+code { font: 12.5px/1.5 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+       background: var(--code-bg); padding: 1px 5px; border-radius: 4px; }
+pre { background: var(--code-bg); border: 1px solid var(--line); border-radius: 8px; padding: 14px 16px;
+      overflow-x: auto; }
+pre code { background: none; padding: 0; font-size: 12.5px; }
+.table-wrap { overflow-x: auto; margin: 12px 0 18px; border: 1px solid var(--line); border-radius: 8px; }
+table { border-collapse: collapse; width: 100%; font-size: 13.5px; }
+th, td { text-align: left; vertical-align: top; padding: 8px 12px; border-bottom: 1px solid var(--line); }
+th { background: var(--soft); font-weight: 600; white-space: nowrap; }
+tr:last-child td { border-bottom: 0; }
+td code { white-space: nowrap; }
+blockquote { margin: 12px 0; padding: 8px 16px; border-left: 3px solid var(--accent); background: var(--soft); }
+.menu-btn { display: none; }
+@media (max-width: 900px) {
+  .layout { grid-template-columns: minmax(0, 1fr); }
+  nav { position: fixed; inset: 0 auto 0 0; width: 280px; transform: translateX(-100%);
+        transition: transform .2s; z-index: 10; box-shadow: 0 0 24px rgba(0,0,0,.2); }
+  nav.open { transform: none; }
+  main { padding: 64px 16px 60px; }
+  .menu-btn { display: block; position: fixed; top: 12px; left: 12px; z-index: 11; padding: 6px 12px;
+              border: 1px solid var(--line); border-radius: 8px; background: var(--bg); color: var(--fg); font: inherit; }
+  td code { white-space: normal; }
+}
+@media print { nav, .menu-btn { display: none; } .layout { display: block; } main { padding: 0; max-width: none; } }
+</style>
+</head>
+<body>
+<button class="menu-btn" onclick="document.querySelector('nav').classList.toggle('open')">☰ Contents</button>
+<div class="layout">
+<nav>
+  <p class="brand">TANUH Edge SDK</p>
+  <p class="sub">Config reference · schema 2</p>
+  <div class="toc">
+<ul>
+<li><a href="#1-the-big-picture">1. The big picture</a></li>
+<li><a href="#2-general-rules">2. General rules</a></li>
+<li><a href="#3-root-keys">3. Root keys</a></li>
+<li><a href="#4-models">4. models</a></li>
+<li><a href="#5-run_models">5. run_models</a></li>
+<li><a href="#6-pipelines">6. pipelines</a><ul>
+<li><a href="#61-input">6.1 input</a></li>
+<li><a href="#62-inputdecode">6.2 input.decode</a></li>
+<li><a href="#63-inputsteps">6.3 input.steps</a></li>
+<li><a href="#64-inputtensors">6.4 input.tensors</a></li>
+<li><a href="#65-output">6.5 output</a></li>
+<li><a href="#66-combine">6.6 combine</a></li>
+</ul>
+</li>
+<li><a href="#7-loading">7. loading</a></li>
+<li><a href="#8-onnx">8. onnx</a></li>
+<li><a href="#9-litert">9. litert</a></li>
+<li><a href="#10-diagnostics">10. diagnostics</a></li>
+<li><a href="#11-recipes">11. Recipes</a></li>
+<li><a href="#12-error-messages-you-may-see-on-apply">12. Error messages you may see on Apply</a></li>
+</ul>
+</div>
+
+</nav>
+<main>
+<h1 id="sdk-config-reference-schema-2">SDK config reference (schema 2)</h1>
+<p>This document explains every key in the JSON passed to the SDK
+(<code>EdgeSession.create(context, json)</code>). For each key it covers what the key does, the allowed values,
+the default when the key is left out, and how changing it affects the results.</p>
+<p>The values described as <strong>current</strong> are those in <code>app/src/main/assets/sdk-config.default.json</code>, the
+config verified on device. It reproduces avni's production QC pipeline exactly.</p>
+<hr />
+<h2 id="1-the-big-picture">1. The big picture</h2>
+<pre><code>config
+├── schema_version      which version of this format the JSON is written in
+├── models[]            WHAT exists: name, file path, engine, which pipeline it uses
+├── run_models          WHICH models run (optional)
+├── pipelines{}         HOW input is prepared and output is read (shared by the models that use it)
+│   └── &lt;name&gt;
+│       ├── input       preprocessing: type, decode, steps, tensors
+│       ├── output      post-processing for each model: decoder, threshold, labels
+│       └── combine     merging the models of this pipeline into one RESULT
+├── loading             how models get into memory
+├── onnx / litert       runtime tuning
+└── diagnostics         test-bench reporting and checks
+</code></pre>
+<p>What happens for one photo:</p>
+<pre><code>photo ─▶ decode ─▶ steps ─▶ tensors ─▶ each model in the pipeline ─▶ output (per model) ─▶ combine ─▶ RESULT
+         (input.decode) (input.steps) (input.tensors)    (loading, onnx/litert)    (output)        (combine)
+</code></pre>
+<p>Which keys can change the <strong>verdict</strong>:</p>
+<table>
+<thead>
+<tr>
+<th>Can change the verdict</th>
+<th>Only changes speed / memory / reporting</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>models[].path</code>, <code>run_models</code> / <code>enabled</code>, everything in <code>pipelines</code> (<code>input</code>, <code>output</code>, <code>combine</code>)</td>
+<td><code>loading</code>, <code>onnx</code>, <code>litert</code>, <code>diagnostics</code></td>
+</tr>
+</tbody>
+</table>
+<p>The exception is <code>onnx.optimization_level</code> and the execution provider: they can shift logits by
+tiny floating-point amounts (around 1e-5), which never matters except right at the threshold.</p>
+<hr />
+<h2 id="2-general-rules">2. General rules</h2>
+<ul>
+<li><strong>Comments:</strong> any key starting with <code>_</code> (e.g. <code>_comment</code>, <code>_steps_comment</code>) is ignored, at any
+  level. Use them freely to document the config inside the config.</li>
+<li><strong>Unknown keys are ignored.</strong> A typo like <code>"stratgey"</code> is silently ignored and the default is
+  used. Check <strong>Validate</strong> after editing.</li>
+<li><strong>Optional blocks:</strong> everything except <code>models</code> and <code>pipelines</code> (or <code>preprocessing</code> in schema 1)
+  can be left out, and defaults apply.</li>
+<li><strong>Errors appear on Apply.</strong> Unknown names, wrong values and missing required keys stop at
+  <strong>Apply</strong> with a message (see section 12). The models are never run with a half-valid config.</li>
+<li><strong>Path placeholders</strong> in <code>models[].path</code>:</li>
+</ul>
+<table>
+<thead>
+<tr>
+<th>placeholder</th>
+<th>resolves to (on the test phone)</th>
+<th>use</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>${FILES}</code></td>
+<td><code>/data/user/0/com.tanuh.demo/files</code></td>
+<td>app-private storage; recommended, and where an SDK would keep downloaded models</td>
+</tr>
+<tr>
+<td><code>${EXTERNAL_FILES}</code></td>
+<td><code>/storage/emulated/0/Android/data/com.tanuh.demo/files</code></td>
+<td>app-specific shared storage; was wiped on reinstall during testing</td>
+</tr>
+<tr>
+<td><code>${CACHE}</code></td>
+<td><code>/data/user/0/com.tanuh.demo/cache</code></td>
+<td>temporary; Android may delete it at any time</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="3-root-keys">3. Root keys</h2>
+<table>
+<thead>
+<tr>
+<th>key</th>
+<th>type</th>
+<th>default</th>
+<th>current</th>
+<th>meaning</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>schema_version</code></td>
+<td>number</td>
+<td>2 if <code>pipelines</code> exists, else 1</td>
+<td><code>2</code></td>
+<td>Version of this format. <code>1</code> = old layout (top-level <code>image</code> / <code>preprocessing</code> / <code>postprocessing</code>), read as one pipeline called <code>default</code>. <code>2</code> = this layout. Anything else is rejected.</td>
+</tr>
+<tr>
+<td><code>models</code></td>
+<td>array</td>
+<td>required</td>
+<td>6 entries</td>
+<td>see section 4</td>
+</tr>
+<tr>
+<td><code>run_models</code></td>
+<td>array of names</td>
+<td>all <code>enabled</code> models</td>
+<td>absent</td>
+<td>see section 5</td>
+</tr>
+<tr>
+<td><code>pipelines</code></td>
+<td>object</td>
+<td>required in schema 2</td>
+<td><code>oral-image</code></td>
+<td>see section 6</td>
+</tr>
+<tr>
+<td><code>loading</code>, <code>onnx</code>, <code>litert</code>, <code>diagnostics</code></td>
+<td>object</td>
+<td>defaults</td>
+<td>present</td>
+<td>see sections 7–10</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="4-models">4. <code>models</code></h2>
+<p>Each entry declares one model file. Declaring a model does not load or run it.</p>
+<pre><code class="language-json">{ &quot;name&quot;: &quot;model8&quot;, &quot;engine&quot;: &quot;onnx&quot;, &quot;pipeline&quot;: &quot;oral-image&quot;,
+  &quot;path&quot;: &quot;${FILES}/models/mvit2_fold1_8_traced_(model8).onnx&quot; }
+</code></pre>
+<table>
+<thead>
+<tr>
+<th>key</th>
+<th>type</th>
+<th>required / default</th>
+<th>allowed values</th>
+<th>effect</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>name</code></td>
+<td>string</td>
+<td><strong>required</strong>, unique</td>
+<td>any, e.g. <code>model8</code>, <code>model8-tfl</code></td>
+<td>The id shown in reports and used by <code>run_models</code>. Duplicate names fail.</td>
+</tr>
+<tr>
+<td><code>path</code></td>
+<td>string</td>
+<td><strong>required</strong></td>
+<td>absolute path, may use placeholders</td>
+<td>Where the file is on the phone. A wrong path shows <strong>MISSING</strong> in Validate (with the folder's contents), and running fails with "Model file not found".</td>
+</tr>
+<tr>
+<td><code>engine</code></td>
+<td>string</td>
+<td><code>auto</code></td>
+<td><code>onnx</code> (also <code>ort</code>, <code>onnxruntime</code>), <code>litert</code> (also <code>tflite</code>), <code>auto</code></td>
+<td>Which runtime runs the file. <code>auto</code> picks LiteRT for <code>.tflite</code> and ONNX Runtime otherwise. The engine must match the file type; ONNX Runtime can't open a <code>.tflite</code>.</td>
+</tr>
+<tr>
+<td><code>pipeline</code></td>
+<td>string</td>
+<td>the only pipeline, if there is exactly one</td>
+<td>a key under <code>pipelines</code></td>
+<td>Which recipe prepares this model's input and reads its output. Required once there are several pipelines. An unknown name fails.</td>
+</tr>
+<tr>
+<td><code>enabled</code></td>
+<td>boolean</td>
+<td><code>true</code></td>
+<td><code>true</code> / <code>false</code></td>
+<td>Only used when <code>run_models</code> is absent. <code>false</code> keeps the model declared but not run.</td>
+</tr>
+<tr>
+<td><code>input_layout</code></td>
+<td>string</td>
+<td>none</td>
+<td><code>CHW</code>, <code>HWC</code></td>
+<td>Rarely needed. Converts the pipeline's tensor layout for this one model only, e.g. a <code>.tflite</code> export that expects HWC while the pipeline produces CHW. Only applies to 4-D float inputs.</td>
+</tr>
+<tr>
+<td><code>sha256</code></td>
+<td>string</td>
+<td>none</td>
+<td>64 hex characters</td>
+<td>Expected file fingerprint. Checked by Validate when <code>diagnostics.verify_sha256</code> is <code>true</code> (OK or MISMATCH).</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Current values:</strong> three ONNX folds, enabled, and three LiteRT copies with <code>"enabled": false</code>.</p>
+<p>How changes affect results:</p>
+<ul>
+<li><strong>A different <code>path</code></strong> means a different model, so different logits and possibly different verdicts.</li>
+<li><strong>Switching the <code>-tfl</code> models on</strong> gives the same verdicts: their logits match ONNX within 1e-4
+  on the sample images. What differs is memory and speed (see section 9).</li>
+</ul>
+<hr />
+<h2 id="5-run_models">5. <code>run_models</code></h2>
+<p>Optional list of model names, e.g. <code>["model8", "model8-tfl"]</code>.</p>
+<table>
+<thead>
+<tr>
+<th>situation</th>
+<th>what runs</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>absent (current)</td>
+<td>every model with <code>enabled: true</code>, in the order of <code>models</code></td>
+</tr>
+<tr>
+<td>present</td>
+<td>exactly these models, in this order; <code>enabled</code> is ignored</td>
+</tr>
+</tbody>
+</table>
+<ul>
+<li>Only models that run are loaded by <strong>Load models</strong>.</li>
+<li>Order sets the order of the report lines. It doesn't change the combined verdict, because the
+  rules don't depend on order.</li>
+<li>A name that isn't declared in <code>models</code> fails on Apply.</li>
+</ul>
+<p>Examples of the impact:</p>
+<table>
+<thead>
+<tr>
+<th><code>run_models</code></th>
+<th>effect</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>["model6","model8","model8-2"]</code></td>
+<td>full ensemble; RESULT from <code>unanimous-and</code> across 3</td>
+</tr>
+<tr>
+<td><code>["model8"]</code></td>
+<td>single fold; no RESULT line (combining needs 2 or more models), just model8's own label</td>
+</tr>
+<tr>
+<td><code>["model8","model8-tfl"]</code></td>
+<td>same fold on two runtimes, side by side; set <code>combine: "none"</code> to avoid a meaningless combined verdict</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="6-pipelines">6. <code>pipelines</code></h2>
+<p>An object of named recipes. The name (here <code>oral-image</code>) is your choice and appears in reports as
+<code>[oral-image]</code>.</p>
+<pre><code class="language-json">&quot;pipelines&quot;: {
+  &quot;oral-image&quot;: { &quot;input&quot;: { ... }, &quot;output&quot;: { ... }, &quot;combine&quot;: &quot;unanimous-and&quot; }
+}
+</code></pre>
+<ul>
+<li><strong>One preprocessing run per pipeline per photo.</strong> The photo is decoded and preprocessed once,
+  and the tensor goes to every model of that pipeline. The three folds share one 256×256 tensor.</li>
+<li><strong>Separate pipelines are independent.</strong> Each one decodes, preprocesses and combines its own models.
+  A model in pipeline A is never combined with a model in pipeline B.</li>
+<li><strong>When to add a second pipeline:</strong> a model trained with different preprocessing (other size,
+  RGB, ImageNet normalisation, …), or one whose output means something else.</li>
+</ul>
+<h3 id="61-input">6.1 <code>input</code></h3>
+<table>
+<thead>
+<tr>
+<th>key</th>
+<th>type</th>
+<th>default</th>
+<th>allowed values</th>
+<th>meaning</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>type</code></td>
+<td>string</td>
+<td><code>image</code></td>
+<td><code>image</code>; <code>text</code>, <code>audio</code>, <code>tensor</code> are reserved</td>
+<td>The kind of input. Decides which other keys are valid. Reserved types fail on Apply with "not implemented in this SDK build yet".</td>
+</tr>
+<tr>
+<td><code>decode</code></td>
+<td>object</td>
+<td>defaults</td>
+<td>see 6.2</td>
+<td>How the photo file becomes pixels. Image only.</td>
+</tr>
+<tr>
+<td><code>steps</code></td>
+<td>array</td>
+<td><strong>required</strong></td>
+<td>see 6.3</td>
+<td>Preprocessing operations, in order.</td>
+</tr>
+<tr>
+<td><code>tensors</code></td>
+<td>array</td>
+<td>one tensor with defaults</td>
+<td>see 6.4</td>
+<td>How the result is handed to the model.</td>
+</tr>
+</tbody>
+</table>
+<h3 id="62-inputdecode">6.2 <code>input.decode</code></h3>
+<table>
+<thead>
+<tr>
+<th>key</th>
+<th>type</th>
+<th>default</th>
+<th>current</th>
+<th>allowed values</th>
+<th>effect on results</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>apply_exif</code></td>
+<td>boolean</td>
+<td><code>true</code></td>
+<td><code>true</code></td>
+<td><code>true</code> / <code>false</code></td>
+<td><code>true</code> rotates or flips the photo upright using its EXIF orientation tag, like <code>cv2.imread</code> in the QC notebook. Android's decoder ignores the tag. Your photos are all orientation 6 (stored rotated 90°), so <code>false</code> would feed them sideways, which can change verdicts because the models aren't rotation-invariant. Keep <code>true</code>; <code>false</code> only exists to test that sensitivity.</td>
+</tr>
+<tr>
+<td><code>max_decode_side</code></td>
+<td>integer ≥ 0</td>
+<td><code>0</code></td>
+<td><code>0</code></td>
+<td><code>0</code>, or e.g. <code>512</code>, <code>1024</code>, <code>2048</code></td>
+<td><code>0</code> decodes at full resolution: exact QC parity, but the slowest step (≈330–420 ms and ≈38 MB for 3072×3072). With N &gt; 0 the decoder halves the image until its long side is between N and 2N. With <code>1024</code>, a 3072² photo decodes at 1536² (≈4× less memory, faster). The 256×256 tensor is then built from different pixels, so logits shift slightly and the avni comparison stops showing 0 differences. Needs QC sign-off before production use.</td>
+</tr>
+</tbody>
+</table>
+<p>Decode for 3072×3072:</p>
+<table>
+<thead>
+<tr>
+<th><code>max_decode_side</code></th>
+<th>decoded size (<code>sample</code>)</th>
+<th>pixel memory</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>0</td>
+<td>3072×3072 (1)</td>
+<td>≈38 MB</td>
+</tr>
+<tr>
+<td>2048</td>
+<td>3072×3072 (1); 3072/2 = 1536 &lt; 2048, so no halving</td>
+<td>≈38 MB</td>
+</tr>
+<tr>
+<td>1024</td>
+<td>1536×1536 (2)</td>
+<td>≈9 MB</td>
+</tr>
+<tr>
+<td>512</td>
+<td>768×768 (4)</td>
+<td>≈2.4 MB</td>
+</tr>
+<tr>
+<td>256</td>
+<td>384×384 (8)</td>
+<td>≈0.6 MB</td>
+</tr>
+</tbody>
+</table>
+<h3 id="63-inputsteps">6.3 <code>input.steps</code></h3>
+<p>An ordered array. Each step is <code>{ "op": "&lt;name&gt;", ...its own parameters }</code>. The image moves through the
+steps as an OpenCV image in BGR order. Each step works on the previous step's result.</p>
+<p><strong>Order matters.</strong> For example, <code>to_uint8</code> before <code>round</code> gives different numbers than the current
+order. The six current steps reproduce the QC notebook exactly, so changing any of them changes the
+model input and moves the logits.</p>
+<h4 id="resize"><code>resize</code></h4>
+<table>
+<thead>
+<tr>
+<th>param</th>
+<th>default</th>
+<th>current</th>
+<th>allowed values</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>size</code></td>
+<td><code>[256, 256]</code></td>
+<td><code>[256, 256]</code></td>
+<td><code>[width, height]</code>, or <code>[n]</code> for a square</td>
+</tr>
+<tr>
+<td><code>mode</code></td>
+<td><code>stretch</code></td>
+<td><code>letterbox</code></td>
+<td><code>stretch</code>, <code>letterbox</code>, <code>short_side</code>, <code>long_side</code></td>
+</tr>
+<tr>
+<td><code>interpolation</code></td>
+<td><code>linear</code></td>
+<td><code>cubic</code></td>
+<td><code>nearest</code>, <code>linear</code> (also <code>bilinear</code>), <code>cubic</code> (also <code>bicubic</code>), <code>area</code>, <code>lanczos</code> (also <code>lanczos4</code>)</td>
+</tr>
+<tr>
+<td><code>pad_value</code></td>
+<td><code>0</code></td>
+<td><code>0</code></td>
+<td>0–255 (letterbox only)</td>
+</tr>
+</tbody>
+</table>
+<p><code>mode</code>, for a 4000×3000 photo with <code>size [256, 256]</code>:</p>
+<table>
+<thead>
+<tr>
+<th>mode</th>
+<th>result</th>
+<th>crops?</th>
+<th>distorts?</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>letterbox</code> (current)</td>
+<td>shrunk to 256×192, centred on a 256×256 canvas filled with <code>pad_value</code></td>
+<td>no</td>
+<td>no</td>
+</tr>
+<tr>
+<td><code>stretch</code></td>
+<td>squashed straight to 256×256</td>
+<td>no</td>
+<td><strong>yes</strong></td>
+</tr>
+<tr>
+<td><code>short_side</code></td>
+<td>shorter side → <code>size[0]</code>: 341×256. Usually followed by <code>center_crop</code>.</td>
+<td>no (the crop step does it)</td>
+<td>no</td>
+</tr>
+<tr>
+<td><code>long_side</code></td>
+<td>longer side → <code>size[0]</code>: 256×192, no padding</td>
+<td>no</td>
+<td>no</td>
+</tr>
+</tbody>
+</table>
+<p>Your sample photos are square, so <code>letterbox</code> and <code>stretch</code> give the same image for them. They differ
+on non-square photos.</p>
+<p><code>interpolation</code>: <code>cubic</code> matches the QC notebook (<code>cv2.INTER_CUBIC</code>) and is required for parity.
+<code>area</code> is often the best quality for big reductions; <code>linear</code> is faster; <code>nearest</code> is blocky.
+Changing it changes pixels slightly, so logits shift slightly.</p>
+<p><code>pad_value</code>: the colour of the letterbox bars (0 = black, as the notebook). It only matters for
+non-square photos. It also feeds into <code>gray_world</code>'s average, because the bars are included in it.</p>
+<h4 id="center_crop"><code>center_crop</code></h4>
+<table>
+<thead>
+<tr>
+<th>param</th>
+<th>default</th>
+<th>allowed</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>size</code></td>
+<td><code>[224, 224]</code></td>
+<td><code>[w, h]</code>, at most the current image size, otherwise Apply passes but Run fails</td>
+</tr>
+</tbody>
+</table>
+<p>Keeps the centre and cuts the edges. Not used today; letterbox never cuts anything. Typical for
+ImageNet-style models, together with <code>short_side</code>.</p>
+<h4 id="gaussian_blur"><code>gaussian_blur</code></h4>
+<table>
+<thead>
+<tr>
+<th>param</th>
+<th>default</th>
+<th>allowed</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>ksize</code></td>
+<td><code>3</code></td>
+<td>odd integer (an even value is bumped up by 1)</td>
+</tr>
+<tr>
+<td><code>sigma</code></td>
+<td><code>0</code></td>
+<td>≥ 0; 0 lets OpenCV derive it from <code>ksize</code></td>
+</tr>
+</tbody>
+</table>
+<p>Smooths noise. Not used today. Adding it changes every pixel, so logits change.</p>
+<h4 id="gray_world"><code>gray_world</code></h4>
+<table>
+<thead>
+<tr>
+<th>param</th>
+<th>default</th>
+<th>current</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>mean_target</code></td>
+<td><code>128</code></td>
+<td><code>128</code></td>
+</tr>
+</tbody>
+</table>
+<p>Lighting and white-balance correction: it computes each colour's average over the whole image
+(letterbox bars included, as the notebook does), then scales that colour so its average becomes
+<code>mean_target</code>. The report shows the averages and the scales it applied, e.g.
+<code>mean B=119.029 G=140.461 R=162.761 scale B=1.07536 G=0.91128 R=0.78643</code>.</p>
+<ul>
+<li><strong>Removing it:</strong> photos taken under yellow or blue light reach the model with that colour cast.
+  This is a large change in model input; expect different logits and possibly verdicts.</li>
+<li><strong>A different target, e.g. 100:</strong> a darker input overall, unlike anything the models were trained on.</li>
+</ul>
+<p>Afterwards values are decimals (<code>f32</code>) and may exceed 255, which is why <code>clip</code> follows.</p>
+<h4 id="clip"><code>clip</code></h4>
+<table>
+<thead>
+<tr>
+<th>param</th>
+<th>default</th>
+<th>current</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>min</code></td>
+<td><code>0</code></td>
+<td><code>0</code></td>
+</tr>
+<tr>
+<td><code>max</code></td>
+<td><code>255</code></td>
+<td><code>255</code></td>
+</tr>
+</tbody>
+</table>
+<p>Limits values to [min, max]. Needed after <code>gray_world</code>, whose scaling can push bright pixels past 255.</p>
+<h4 id="round"><code>round</code></h4>
+<table>
+<thead>
+<tr>
+<th>param</th>
+<th>default</th>
+<th>current</th>
+<th>allowed</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>decimals</code></td>
+<td><code>1</code></td>
+<td><code>1</code></td>
+<td>0, 1, 2, …</td>
+</tr>
+</tbody>
+</table>
+<p>Rounds to N decimals, round-half-to-even like <code>np.round</code> (137.64 → 137.6). It serves no visual
+purpose; it's there because the QC notebook does it. Removing it or changing <code>decimals</code> shifts some
+values by a fraction of a level, giving a tiny logit change and losing exact parity.</p>
+<h4 id="to_uint8"><code>to_uint8</code></h4>
+<p>No parameters. Rounds to whole numbers and limits to 0–255 (like <code>cv2.convertScaleAbs</code>). After it
+the image is <code>u8</code>. The preview thumbnail shows the last <code>u8</code> state, which is what the model "sees".</p>
+<h4 id="scale"><code>scale</code></h4>
+<table>
+<thead>
+<tr>
+<th>param</th>
+<th>current</th>
+<th>meaning</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>divide_by</code></td>
+<td><code>255</code></td>
+<td>value ÷ N</td>
+</tr>
+<tr>
+<td><code>multiply</code></td>
+<td>–</td>
+<td>value × N (use one of the two)</td>
+</tr>
+</tbody>
+</table>
+<p>Converts to the range the model was trained on: ÷255 gives 0–1. Without it the model gets 0–255
+values, which is a completely wrong input range and gives meaningless logits. If a pipeline ends
+without any float step, the SDK converts to float without scaling and adds a warning note to the
+report.</p>
+<h4 id="normalize"><code>normalize</code></h4>
+<table>
+<thead>
+<tr>
+<th>param</th>
+<th>default</th>
+<th>example (ImageNet)</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>mean</code></td>
+<td><code>[0, 0, 0]</code></td>
+<td><code>[0.485, 0.456, 0.406]</code></td>
+</tr>
+<tr>
+<td><code>std</code></td>
+<td><code>[1, 1, 1]</code></td>
+<td><code>[0.229, 0.224, 0.225]</code></td>
+</tr>
+<tr>
+<td><code>order</code></td>
+<td><code>RGB</code></td>
+<td>the order the two lists are written in (<code>RGB</code> or <code>BGR</code>)</td>
+</tr>
+</tbody>
+</table>
+<p>Computes (value − mean) ÷ std per colour. It isn't used by the TANUH models; adding it would
+completely change their input. It's here for models trained with mean/std normalisation, usually
+after <code>scale ÷255</code>.</p>
+<h4 id="the-current-steps-on-one-pixel-illustrative">The current steps on one pixel (illustrative)</h4>
+<table>
+<thead>
+<tr>
+<th>after step</th>
+<th>red value of one pixel (scale factor from image 1000233114)</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>decode</td>
+<td>175</td>
+</tr>
+<tr>
+<td>resize</td>
+<td>175 (integer, 256×256 image)</td>
+</tr>
+<tr>
+<td>gray_world (×0.78643)</td>
+<td>137.625…</td>
+</tr>
+<tr>
+<td>clip</td>
+<td>137.625…</td>
+</tr>
+<tr>
+<td>round 1</td>
+<td>137.6</td>
+</tr>
+<tr>
+<td>to_uint8</td>
+<td>138</td>
+</tr>
+<tr>
+<td>scale ÷255</td>
+<td>0.5412</td>
+</tr>
+</tbody>
+</table>
+<h3 id="64-inputtensors">6.4 <code>input.tensors</code></h3>
+<p>A list describing what is handed to the model. An image pipeline produces exactly one entry.</p>
+<pre><code class="language-json">&quot;tensors&quot;: [ { &quot;name&quot;: &quot;input&quot;, &quot;dtype&quot;: &quot;float32&quot;, &quot;layout&quot;: &quot;CHW&quot;, &quot;channel_order&quot;: &quot;BGR&quot;, &quot;shape&quot;: [1, 3, 256, 256] } ]
+</code></pre>
+<table>
+<thead>
+<tr>
+<th>key</th>
+<th>default</th>
+<th>current</th>
+<th>allowed</th>
+<th>effect</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>name</code></td>
+<td>none (bind by position)</td>
+<td><code>input</code></td>
+<td>the model's input name</td>
+<td>Must match the model. Load prints it (<code>in input [1, 3, 256, 256] FLOAT</code>). A wrong name fails at Run with "has no input 'x'. Inputs: [...]".</td>
+</tr>
+<tr>
+<td><code>dtype</code></td>
+<td><code>float32</code></td>
+<td><code>float32</code></td>
+<td><code>float32</code>; <code>int32</code> and <code>int64</code> are for future text models</td>
+<td>Images must be float32 (Apply fails otherwise).</td>
+</tr>
+<tr>
+<td><code>layout</code></td>
+<td><code>CHW</code></td>
+<td><code>CHW</code></td>
+<td><code>CHW</code>, <code>HWC</code></td>
+<td><code>CHW</code> stores all Blue values, then all Green, then all Red. <code>HWC</code> stores B,G,R per pixel. The wrong layout scrambles the image for the model and gives meaningless logits, often with no error.</td>
+</tr>
+<tr>
+<td><code>channel_order</code></td>
+<td><code>RGB</code></td>
+<td><code>BGR</code></td>
+<td><code>RGB</code>, <code>BGR</code></td>
+<td>The colour order the model was trained with. The MViT2 folds use BGR (OpenCV). Swapping it exchanges red and blue, which for oral images (lots of red) shifts logits a lot.</td>
+</tr>
+<tr>
+<td><code>shape</code></td>
+<td>inferred</td>
+<td><code>[1, 3, 256, 256]</code></td>
+<td>e.g. <code>[1, 3, 224, 224]</code>, <code>[1, 256, 256, 3]</code> for HWC</td>
+<td>A safety check: if the steps produce a different size, Run fails with a clear message instead of feeding the model a wrong-size input.</td>
+</tr>
+</tbody>
+</table>
+<h3 id="65-output">6.5 <code>output</code></h3>
+<p>How one model's raw number(s) become a label. It applies to each model of the pipeline separately.
+The model's first output is read.</p>
+<table>
+<thead>
+<tr>
+<th>key</th>
+<th>default</th>
+<th>current</th>
+<th>allowed</th>
+<th>effect</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>decoder</code></td>
+<td><code>sigmoid-binary</code></td>
+<td><code>sigmoid-binary</code></td>
+<td><code>sigmoid-binary</code>, <code>softmax-argmax</code>, <code>raw</code></td>
+<td>see below</td>
+</tr>
+<tr>
+<td><code>threshold</code></td>
+<td><code>0.5</code></td>
+<td><code>0.5</code></td>
+<td>0–1</td>
+<td>Probability cut-off (sigmoid-binary and mean-probability).</td>
+</tr>
+<tr>
+<td><code>threshold_inclusive</code></td>
+<td><code>true</code></td>
+<td><code>true</code></td>
+<td><code>true</code> / <code>false</code></td>
+<td><code>true</code>: p ≥ threshold is positive (the QC rule). <code>false</code>: p &gt; threshold. Only matters when p equals the threshold exactly.</td>
+</tr>
+<tr>
+<td><code>labels</code></td>
+<td><code>["Negative","Positive"]</code></td>
+<td>same</td>
+<td>list of strings</td>
+<td>Binary: [negative, positive]. Softmax: one name per class, in output order.</td>
+</tr>
+</tbody>
+</table>
+<p>Decoders:</p>
+<table>
+<thead>
+<tr>
+<th>decoder</th>
+<th>for models that output</th>
+<th>computes</th>
+<th>report shows</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>sigmoid-binary</code> (current)</td>
+<td>one number (a logit), e.g. shape [1,1]</td>
+<td>p = 1 / (1 + e^-logit); positive if p ≥ threshold</td>
+<td><code>model8 Positive p=1.0000 logit=11.5445</code></td>
+</tr>
+<tr>
+<td><code>softmax-argmax</code></td>
+<td>one score per class</td>
+<td>picks the highest class; its softmax probability is the confidence</td>
+<td>the class label and probability</td>
+</tr>
+<tr>
+<td><code>raw</code></td>
+<td>anything</td>
+<td>nothing; passes the numbers through</td>
+<td>label <code>raw</code> and the first values</td>
+</tr>
+</tbody>
+</table>
+<p>Impact of <code>threshold</code>, with your logits:</p>
+<table>
+<thead>
+<tr>
+<th>threshold</th>
+<th>p needed</th>
+<th>logit needed</th>
+<th>your 4 images (lowest logit 5.34, p 0.9952)</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>0.5 (current)</td>
+<td>≥ 0.5</td>
+<td>≥ 0</td>
+<td>all Positive</td>
+</tr>
+<tr>
+<td>0.9</td>
+<td>≥ 0.9</td>
+<td>≥ 2.20</td>
+<td>all Positive</td>
+</tr>
+<tr>
+<td>0.99</td>
+<td>≥ 0.99</td>
+<td>≥ 4.60</td>
+<td>all Positive</td>
+</tr>
+<tr>
+<td>0.999</td>
+<td>≥ 0.999</td>
+<td>≥ 6.91</td>
+<td>1000233116 / model8-2 turns <strong>Negative</strong>, so the combined RESULT turns Negative (unanimous-and)</td>
+</tr>
+</tbody>
+</table>
+<p>The threshold is a clinical decision. Change it only together with the QC team.</p>
+<h3 id="66-combine">6.6 <code>combine</code></h3>
+<p>How the verdicts of all models in this pipeline become one RESULT line.</p>
+<table>
+<thead>
+<tr>
+<th>value</th>
+<th>RESULT is positive when</th>
+<th>your example: model labels P, P, N</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>unanimous-and</code> (current; avni)</td>
+<td><strong>every</strong> model is positive</td>
+<td>Negative (strictest, fewest positives)</td>
+</tr>
+<tr>
+<td><code>majority</code></td>
+<td>more than half are positive</td>
+<td>Positive</td>
+</tr>
+<tr>
+<td><code>any-or</code></td>
+<td><strong>at least one</strong> is positive</td>
+<td>Positive (most sensitive, most positives)</td>
+</tr>
+<tr>
+<td><code>mean-probability</code></td>
+<td>the average p ≥ threshold</td>
+<td>depends on the three probabilities</td>
+</tr>
+<tr>
+<td><code>none</code></td>
+<td>no RESULT line; only per-model labels</td>
+<td>–</td>
+</tr>
+</tbody>
+</table>
+<ul>
+<li>A RESULT line needs 2 or more models, except <code>mean-probability</code>, which works with one.</li>
+<li>Choosing the rule trades sensitivity against specificity, so it's a clinical/QC decision.
+  <code>unanimous-and</code> is what avni ships.</li>
+</ul>
+<hr />
+<h2 id="7-loading">7. <code>loading</code></h2>
+<p>How model files get into memory. <strong>It never changes results</strong>, only load time, memory and latency.</p>
+<table>
+<thead>
+<tr>
+<th>key</th>
+<th>default</th>
+<th>current</th>
+<th>allowed</th>
+<th>effect</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>strategy</code></td>
+<td><code>path</code></td>
+<td><code>path</code></td>
+<td><code>path</code>, <code>mmap</code>, <code>bytes</code></td>
+<td>see below</td>
+</tr>
+<tr>
+<td><code>keep_loaded</code></td>
+<td><code>true</code></td>
+<td><code>true</code></td>
+<td><code>true</code> / <code>false</code></td>
+<td><code>true</code>: models stay loaded between photos (load once, ≈80–180 ms each; ≈22–27 MB native memory each). <code>false</code>: each model is loaded, run and closed per photo, one at a time. Lowest peak memory (one model at a time), but every photo pays the load time again.</td>
+</tr>
+<tr>
+<td><code>warmup_runs</code></td>
+<td><code>0</code></td>
+<td><code>0</code></td>
+<td>0–10 (clamped)</td>
+<td>Untimed, discarded inferences the first time a loaded model is used. <code>0</code>: the first photo's time includes first-run slowness (e.g. 86 ms vs ≈65 ms); that's what a user sees on a first scan. <code>1</code>: the timed numbers show steady-state speed, which is fair for comparing runtimes. It doesn't make anything faster overall; the slow run still happens, untimed.</td>
+</tr>
+</tbody>
+</table>
+<p><code>strategy</code>, per 17.7 MB <code>.onnx</code> model:</p>
+<table>
+<thead>
+<tr>
+<th>strategy</th>
+<th>how</th>
+<th>Java heap</th>
+<th>native</th>
+<th>use</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>path</code> (recommended)</td>
+<td>the runtime opens the file itself</td>
+<td>≈0</td>
+<td>+22–27 MB (measured)</td>
+<td>default</td>
+</tr>
+<tr>
+<td><code>mmap</code></td>
+<td><code>FileChannel.map</code> → direct buffer → runtime</td>
+<td>≈0</td>
+<td>about the same as path</td>
+<td>equivalent for <code>.onnx</code>; ORT still copies the weights</td>
+</tr>
+<tr>
+<td><code>bytes</code></td>
+<td>whole file into a Java ByteArray first</td>
+<td><strong>+17.7 MB</strong> during load</td>
+<td>+22 MB</td>
+<td>baseline only; the out-of-memory risk the peer advice warns about</td>
+</tr>
+</tbody>
+</table>
+<p>For LiteRT <code>.tflite</code>, <code>path</code> means memory-mapped by the runtime and <code>bytes</code> is rejected.</p>
+<hr />
+<h2 id="8-onnx">8. <code>onnx</code></h2>
+<p>Applies to every model with <code>engine: onnx</code>. The defaults are avni's <code>OnnxEngine</code> settings for
+keeping 3 models loaded on low-RAM phones. <strong>It doesn't change verdicts</strong>; logits can move by about
+1e-5 between providers and optimisation levels.</p>
+<table>
+<thead>
+<tr>
+<th>key</th>
+<th>default</th>
+<th>current</th>
+<th>allowed</th>
+<th>effect</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>intra_op_threads</code></td>
+<td>CPU cores, at most 4</td>
+<td><code>4</code></td>
+<td>1–8</td>
+<td>Threads per inference. More threads is usually faster up to the number of fast cores; too many slows things down on budget phones and uses more battery. Try 2 vs 4.</td>
+</tr>
+<tr>
+<td><code>cpu_arena</code></td>
+<td><code>false</code></td>
+<td><code>false</code></td>
+<td><code>true</code> / <code>false</code></td>
+<td><code>true</code> keeps a reusable memory pool: slightly faster repeat runs, more native memory held.</td>
+</tr>
+<tr>
+<td><code>memory_pattern</code></td>
+<td><code>false</code></td>
+<td><code>false</code></td>
+<td><code>true</code> / <code>false</code></td>
+<td><code>true</code> pre-plans buffers from the first run: slightly faster, more memory.</td>
+</tr>
+<tr>
+<td><code>optimization_level</code></td>
+<td><code>all</code></td>
+<td><code>all</code></td>
+<td><code>none</code>, <code>basic</code>, <code>extended</code>, <code>all</code> (anything else is treated as <code>all</code>)</td>
+<td>Graph rewrites at load. <code>all</code> gives the fastest inference with a slightly longer load. <code>none</code> is useful only for debugging.</td>
+</tr>
+<tr>
+<td><code>execution_provider</code></td>
+<td><code>cpu</code></td>
+<td><code>cpu</code></td>
+<td><code>cpu</code>, <code>xnnpack</code>, <code>nnapi</code></td>
+<td><code>cpu</code>: works everywhere. <code>xnnpack</code>: ARM-tuned CPU kernels, often faster. <code>nnapi</code>: Android's neural-network API (NPU/DSP/GPU); varies by phone, often a big first-run cost, deprecated from Android 15; unsupported layers fall back to CPU. Unknown values fail at Load.</td>
+</tr>
+<tr>
+<td><code>config_entries</code></td>
+<td><code>{}</code></td>
+<td><code>{}</code></td>
+<td>string → string</td>
+<td>Raw ONNX Runtime session settings passed through unchanged. Example: <code>{"session.intra_op.allow_spinning": "0"}</code> stops idle threads from spinning, which saves CPU and battery and is slightly slower. Keys starting with <code>_</code> are ignored.</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="9-litert">9. <code>litert</code></h2>
+<p>Applies to every model with <code>engine: litert</code>. These models only run if the app was built with
+<code>edgesdk.litert=true</code> in <code>gradle.properties</code>; otherwise running one fails with "This build has no
+LiteRT engine".</p>
+<table>
+<thead>
+<tr>
+<th>key</th>
+<th>default</th>
+<th>current</th>
+<th>allowed</th>
+<th>effect</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>accelerator</code></td>
+<td><code>cpu</code></td>
+<td><code>cpu</code></td>
+<td><code>cpu</code>, <code>gpu</code></td>
+<td><code>gpu</code> can be much faster but needs the <code>litert-gpu</code> dependency (not added yet), and not every layer is supported on GPU.</td>
+</tr>
+</tbody>
+</table>
+<p>LiteRT memory-maps the <code>.tflite</code> from its path, so expect much less native memory per model than
+ONNX's +22 MB. Verifying that on device is the point of the LiteRT experiment.</p>
+<hr />
+<h2 id="10-diagnostics">10. <code>diagnostics</code></h2>
+<p>Test-bench extras. <strong>They never change results</strong>; they add measurements and checks to the report.
+Switch them off in production.</p>
+<table>
+<thead>
+<tr>
+<th>key</th>
+<th>default</th>
+<th>current</th>
+<th>allowed</th>
+<th>effect</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>measure_pss</code></td>
+<td><code>true</code></td>
+<td><code>true</code></td>
+<td><code>true</code> / <code>false</code></td>
+<td>Adds the process's total memory (PSS) to memory lines (<code>PSS=225.5 MB</code>). PSS is what Android uses when deciding to kill apps. Costs a few ms per reading.</td>
+</tr>
+<tr>
+<td><code>verify_sha256</code></td>
+<td><code>false</code></td>
+<td><code>false</code></td>
+<td><code>true</code> / <code>false</code></td>
+<td>Validate fingerprints each model file in 64 KB chunks and compares it with <code>models[].sha256</code>. Catches corrupted or wrong files. Takes ≈1 s per 17 MB file.</td>
+</tr>
+<tr>
+<td><code>compare_with_reference</code></td>
+<td><code>false</code></td>
+<td><code>true</code></td>
+<td><code>true</code> / <code>false</code></td>
+<td>Also runs avni's Kotlin preprocessing on the same photo and compares tensors number by number (<code>0 / 196608 elements differ</code>). If any differ, it also prints both logits per model. Costs ≈70–290 ms and ≈41 MB of Java heap per photo (avni's own cost).</td>
+</tr>
+<tr>
+<td><code>reference_pipeline</code></td>
+<td>first image pipeline that runs</td>
+<td><code>oral-image</code></td>
+<td>a pipeline name</td>
+<td>Which pipeline the comparison applies to.</td>
+</tr>
+<tr>
+<td><code>reference_params</code></td>
+<td>none (comparison skipped)</td>
+<td>avni's settings</td>
+<td>avni's <code>input.params</code> format</td>
+<td>The recipe avni's code is run with. It's copied from avni's <code>tanuh-ensemble-override.json</code>. It must describe the same recipe as the pipeline's <code>steps</code> to show 0 differences. Changing a step and leaving this alone shows how far your change moved the input from production.</td>
+</tr>
+</tbody>
+</table>
+<p><code>reference_params</code> keys (avni's names, not the SDK's):</p>
+<table>
+<thead>
+<tr>
+<th>key</th>
+<th>current</th>
+<th>SDK equivalent</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>size</code>, <code>resize_mode</code>, <code>pad_value</code>, <code>interpolation</code></td>
+<td><code>[256,256]</code>, <code>letterbox</code>, <code>0</code>, <code>cubic</code></td>
+<td>the <code>resize</code> step</td>
+</tr>
+<tr>
+<td><code>mean_target</code></td>
+<td><code>128</code></td>
+<td><code>gray_world</code></td>
+</tr>
+<tr>
+<td><code>round_decimals</code>, <code>rounding</code></td>
+<td><code>1</code>, <code>numpy</code></td>
+<td><code>round</code> (half-to-even)</td>
+</tr>
+<tr>
+<td><code>uint8_cast</code>, <code>uint8_round</code></td>
+<td><code>true</code>, <code>true</code></td>
+<td><code>to_uint8</code></td>
+</tr>
+<tr>
+<td><code>scale</code></td>
+<td><code>0.00392…</code> (1/255)</td>
+<td><code>scale divide_by 255</code></td>
+</tr>
+<tr>
+<td><code>channel_order</code>, <code>layout</code></td>
+<td><code>BGR</code>, <code>CHW</code></td>
+<td><code>tensors[0]</code></td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="11-recipes">11. Recipes</h2>
+<p><strong>Only one fold, fast iteration</strong></p>
+<pre><code class="language-json">&quot;run_models&quot;: [&quot;model8&quot;]
+</code></pre>
+<p><strong>Same fold, ONNX vs LiteRT side by side</strong> (needs <code>edgesdk.litert=true</code>)</p>
+<pre><code class="language-json">&quot;run_models&quot;: [&quot;model8&quot;, &quot;model8-tfl&quot;],
+&quot;pipelines&quot;: { &quot;oral-image&quot;: { ..., &quot;combine&quot;: &quot;none&quot; } },
+&quot;loading&quot;: { &quot;strategy&quot;: &quot;path&quot;, &quot;keep_loaded&quot;: true, &quot;warmup_runs&quot;: 1 }
+</code></pre>
+<p><strong>Low memory: one model in memory at a time</strong></p>
+<pre><code class="language-json">&quot;loading&quot;: { &quot;strategy&quot;: &quot;path&quot;, &quot;keep_loaded&quot;: false }
+</code></pre>
+<p><strong>Faster decode (needs QC sign-off; watch the avni diff line)</strong></p>
+<pre><code class="language-json">&quot;decode&quot;: { &quot;apply_exif&quot;: true, &quot;max_decode_side&quot;: 1024 }
+</code></pre>
+<p><strong>Speed comparison of ONNX backends</strong></p>
+<pre><code class="language-json">&quot;loading&quot;: { &quot;warmup_runs&quot;: 1 },
+&quot;onnx&quot;: { &quot;execution_provider&quot;: &quot;xnnpack&quot; },
+&quot;diagnostics&quot;: { &quot;compare_with_reference&quot;: false, &quot;measure_pss&quot;: false }
+</code></pre>
+<p><strong>A second, different image model next to the folds</strong> (e.g. an ImageNet-style quality classifier)</p>
+<pre><code class="language-json">&quot;models&quot;: [
+  ...the three folds with &quot;pipeline&quot;: &quot;oral-image&quot;...,
+  { &quot;name&quot;: &quot;quality&quot;, &quot;engine&quot;: &quot;onnx&quot;, &quot;pipeline&quot;: &quot;quality-check&quot;, &quot;path&quot;: &quot;${FILES}/models/quality.onnx&quot; }
+],
+&quot;pipelines&quot;: {
+  &quot;oral-image&quot;: { ...unchanged... },
+  &quot;quality-check&quot;: {
+    &quot;input&quot;: {
+      &quot;type&quot;: &quot;image&quot;,
+      &quot;steps&quot;: [
+        { &quot;op&quot;: &quot;resize&quot;, &quot;size&quot;: [224, 224], &quot;mode&quot;: &quot;short_side&quot;, &quot;interpolation&quot;: &quot;linear&quot; },
+        { &quot;op&quot;: &quot;center_crop&quot;, &quot;size&quot;: [224, 224] },
+        { &quot;op&quot;: &quot;scale&quot;, &quot;divide_by&quot;: 255 },
+        { &quot;op&quot;: &quot;normalize&quot;, &quot;mean&quot;: [0.485, 0.456, 0.406], &quot;std&quot;: [0.229, 0.224, 0.225], &quot;order&quot;: &quot;RGB&quot; }
+      ],
+      &quot;tensors&quot;: [ { &quot;dtype&quot;: &quot;float32&quot;, &quot;layout&quot;: &quot;CHW&quot;, &quot;channel_order&quot;: &quot;RGB&quot;, &quot;shape&quot;: [1, 3, 224, 224] } ]
+    },
+    &quot;output&quot;: { &quot;decoder&quot;: &quot;softmax-argmax&quot;, &quot;labels&quot;: [&quot;good&quot;, &quot;blurry&quot;, &quot;dark&quot;] },
+    &quot;combine&quot;: &quot;none&quot;
+  }
+}
+</code></pre>
+<p>The report then shows an <code>[oral-image]</code> block and a <code>[quality-check]</code> block per photo. The photo is
+decoded once and shared, because both pipelines use the same <code>decode</code> settings.</p>
+<hr />
+<h2 id="12-error-messages-you-may-see-on-apply">12. Error messages you may see on Apply</h2>
+<table>
+<thead>
+<tr>
+<th>message (start)</th>
+<th>cause</th>
+<th>fix</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>Unsupported schema_version</code></td>
+<td>not 1 or 2</td>
+<td>set <code>2</code></td>
+</tr>
+<tr>
+<td><code>Missing array 'models'</code> / <code>Missing object 'pipelines'</code></td>
+<td>required block absent</td>
+<td>add it</td>
+</tr>
+<tr>
+<td><code>Duplicate model names</code></td>
+<td>two entries share a <code>name</code></td>
+<td>rename one</td>
+</tr>
+<tr>
+<td><code>model 'x' uses unknown pipeline 'y'</code></td>
+<td>typo in <code>pipeline</code></td>
+<td>match a key under <code>pipelines</code></td>
+</tr>
+<tr>
+<td><code>model 'x' has no 'pipeline' and there are several</code></td>
+<td>more than one pipeline, model doesn't say which</td>
+<td>add <code>pipeline</code></td>
+</tr>
+<tr>
+<td><code>run_models refers to 'x'</code></td>
+<td>name not in <code>models</code></td>
+<td>fix the name</td>
+</tr>
+<tr>
+<td><code>Nothing to run</code></td>
+<td>no <code>run_models</code> and every model is <code>enabled: false</code></td>
+<td>enable one</td>
+</tr>
+<tr>
+<td><code>input.type 'text' is reserved but not implemented</code></td>
+<td>non-image type</td>
+<td>use <code>image</code> for now</td>
+</tr>
+<tr>
+<td><code>Unsupported preprocessing op(s) [...]</code></td>
+<td>typo in <code>op</code></td>
+<td>use a name from 6.3</td>
+</tr>
+<tr>
+<td><code>an image input produces exactly one tensor</code></td>
+<td><code>tensors</code> has 0 or 2+ entries</td>
+<td>keep one</td>
+</tr>
+<tr>
+<td><code>loading.strategy must be one of</code></td>
+<td>typo</td>
+<td><code>path</code>, <code>mmap</code> or <code>bytes</code></td>
+</tr>
+<tr>
+<td><code>output.decoder must be one of</code> / <code>combine must be one of</code></td>
+<td>typo</td>
+<td>see 6.5 / 6.6</td>
+</tr>
+<tr>
+<td><code>diagnostics.reference_pipeline 'x' is not a declared pipeline</code></td>
+<td>typo</td>
+<td>match a pipeline name</td>
+</tr>
+<tr>
+<td><code>Unresolved placeholder in path</code></td>
+<td>e.g. <code>${FILE}</code></td>
+<td>use <code>${FILES}</code>, <code>${EXTERNAL_FILES}</code> or <code>${CACHE}</code></td>
+</tr>
+</tbody>
+</table>
+<p>Errors that only appear on <strong>Load</strong> or <strong>Run</strong>: model file not found, a wrong tensor <code>name</code>, a
+<code>shape</code> mismatch, <code>center_crop</code> larger than the image, an unknown <code>execution_provider</code>, and LiteRT
+models in a build without LiteRT.</p>
+</main>
+</div>
+<script>
+document.querySelectorAll('main table').forEach(t => { const w = document.createElement('div'); w.className = 'table-wrap'; t.parentNode.insertBefore(w, t); w.appendChild(t); });
+const links = [...document.querySelectorAll('nav a')];
+const heads = links.map(a => document.getElementById(decodeURIComponent(a.hash.slice(1)))).filter(Boolean);
+const spy = () => { let cur = heads[0]; for (const h of heads) if (h.getBoundingClientRect().top < 80) cur = h;
+  links.forEach(a => a.classList.toggle('active', cur && a.hash === '#' + cur.id)); };
+addEventListener('scroll', spy, { passive: true }); spy();
+links.forEach(a => a.addEventListener('click', () => document.querySelector('nav').classList.remove('open')));
+</script>
+</body>
+</html>

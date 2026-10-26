@@ -1,0 +1,4 @@
+-keep class ai.onnxruntime.** { *; }
+-keep class com.google.ai.edge.litert.** { *; }
+-keep class org.opencv.** { *; }
+-keep class com.tanuh.edgesdk.engine.LiteRtEngine { <init>(...); }

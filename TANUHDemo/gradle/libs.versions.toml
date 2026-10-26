@@ -13,6 +13,8 @@ constraintlayout = "2.1.4"
 vosk = "0.3.47"
 mediapipeTasksText = "0.10.14"
 json = "20240303"
+onnxruntime = "1.22.0"
+litert = "2.3.0"
 
 [libraries]
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
@@ -27,7 +29,10 @@ androidx-constraintlayout = { group = "androidx.constraintlayout", name = "const
 vosk-android = { group = "com.alphacephei", name = "vosk-android", version.ref = "vosk" }
 mediapipe-tasks-text = { group = "com.google.mediapipe", name = "tasks-text", version.ref = "mediapipeTasksText" }
 json = { group = "org.json", name = "json", version.ref = "json" }
+onnxruntime-android = { group = "com.microsoft.onnxruntime", name = "onnxruntime-android", version.ref = "onnxruntime" }
+litert = { group = "com.google.ai.edge.litert", name = "litert", version.ref = "litert" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }
+android-library = { id = "com.android.library", version.ref = "agp" }
 kotlin-android = { id = "org.jetbrains.kotlin.android", version.ref = "kotlin" }
