@@ -77,9 +77,10 @@
   },
 
   "diagnostics": {
-    "_comment": "Test-bench extras, not needed in production. measure_pss: include process PSS in memory lines. verify_sha256: stream-hash model files on Validate. compare_with_reference: also run avni's Kotlin preprocessor on reference_pipeline (default: first image pipeline) with reference_params (= avni override 'input.params') and report tensor and logit differences.",
+    "_comment": "Test-bench extras, not needed in production. measure_pss: include process PSS in memory lines. verify_sha256: stream-hash model files on Validate. parity_trace: write a line-by-line trace of every intermediate value (input hash, decoded pixels, canvas, gray-world, tensor hash, logits) to <external files>/parity-traces/sdk-*.txt, in the same format as avni's debug build, for tools/parity/compare_traces.py. compare_with_reference: also run avni's Kotlin preprocessor on reference_pipeline (default: first image pipeline) with reference_params (= avni override 'input.params') and report tensor and logit differences.",
     "measure_pss": true,
     "verify_sha256": false,
+    "parity_trace": true,
     "compare_with_reference": true,
     "reference_pipeline": "oral-image",
     "reference_params": {
@@ -87,6 +88,7 @@
       "resize_mode": "letterbox",
       "pad_value": 0,
       "interpolation": "cubic",
+      "ignore_color_profile": true,
       "channel_order": "BGR",
       "layout": "CHW",
       "scale": 0.00392156862745098,

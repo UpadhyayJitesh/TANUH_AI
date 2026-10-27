@@ -315,6 +315,13 @@ To use them:
 the flag. If Gradle reports a different `CompiledModel.create` signature or a Kotlin metadata-version
 error, only that file, and possibly the Kotlin version, needs to change.
 
+## Parity traces vs avni
+
+With `diagnostics.parity_trace: true` (the default), each image's intermediate values are written in the
+same format as avni's debug build: input hash, decoded pixels, canvas, gray-world, tensor hash, and model
+logits. `tools/parity/compare_traces.py avni-*.txt sdk-*.txt` compares the two stage by stage. See
+`tools/parity/README.md`.
+
 ## Code map
 
 | file | role |

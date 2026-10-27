@@ -125,12 +125,20 @@ class SdkTestActivity : AppCompatActivity() {
             pickImages.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly))
         }
         runButton.setOnClickListener { runPicked() }
+        // Exact files, no photo picker: everything adb-pushed to <external files>/test-images/ is run in name order.
+        findViewById<Button>(R.id.runFolderButton).setOnClickListener {
+            val dir = File(externalDir, TEST_IMAGES_DIR)
+            val files = dir.listFiles { f -> f.isFile && f.extension.lowercase() in setOf("jpg", "jpeg", "png", "webp") }
+                ?.sortedBy { it.name }.orEmpty()
+            if (files.isEmpty()) showStatus("No images in ${dir.absolutePath}. adb push your files there first.")
+            else runImages(files.map { f -> f.name to { s: EdgeSession -> s.inferImage(f, f.name) } })
+        }
         findViewById<Button>(R.id.copyReportButton).setOnClickListener {
             (getSystemService(CLIPBOARD_SERVICE) as ClipboardManager).setPrimaryClip(ClipData.newPlainText("sdk report", report.toString()))
             Toast.makeText(this, "Report copied", Toast.LENGTH_SHORT).show()
         }
 
-        showStatus("Models dir: ${File(filesDir, "models").absolutePath}\nImport models (once) → Apply → Validate → Load → Pick images → Run.")
+        showStatus("Models dir: ${File(filesDir, "models").absolutePath}\nTest images dir (adb push): ${File(externalDir, TEST_IMAGES_DIR).absolutePath}\nImport models (once) → Apply → Validate → Load → Pick images → Run.")
         applyConfig()
     }
 
@@ -187,30 +195,36 @@ class SdkTestActivity : AppCompatActivity() {
     }
 
     private fun runPicked() {
-        val s = session ?: return showStatus("Apply a valid config first.")
         val uris = pickedUris
         if (uris.isEmpty()) return showStatus("Pick images first.")
+        runImages(uris.map { uri -> displayName(uri) to { s: EdgeSession -> s.inferImage(uri, displayName(uri)) } })
+    }
+
+    /** Runs each (label, inference) in turn on the worker thread; shared by the picker and the folder button. */
+    private fun runImages(jobs: List<Pair<String, (EdgeSession) -> EdgeSession.ImageReport>>) {
+        val s = session ?: return showStatus("Apply a valid config first.")
         runButton.isEnabled = false
         previewStrip.removeAllViews()
-        showStatus("Running ${uris.size} image(s)…")
+        showStatus("Running ${jobs.size} image(s)…")
         worker.execute {
             val runLog = StringBuilder()
-            for ((i, uri) in uris.withIndex()) {
-                runOnUiThread { showStatus("Image ${i + 1}/${uris.size}…") }
+            for ((i, job) in jobs.withIndex()) {
+                val (label, infer) = job
+                runOnUiThread { showStatus("Image ${i + 1}/${jobs.size}: $label") }
                 val text = try {
-                    val r = s.inferImage(uri, displayName(uri))   // SDK decodes per pipeline settings, runs, combines
+                    val r = infer(s)
                     r.preview?.let { p -> runOnUiThread { addPreview(p, r.headline) } }
                     r.text
                 } catch (t: Throwable) {        // includes OutOfMemoryError, which is part of what we're testing
-                    Log.e(TAG, "Inference failed for $uri", t)
-                    "━━ ${displayName(uri)}: FAILED ${t.javaClass.simpleName}: ${t.message}\n"
+                    Log.e(TAG, "Inference failed for $label", t)
+                    "━━ $label: FAILED ${t.javaClass.simpleName}: ${t.message}\n"
                 }
                 runLog.append(text)
                 runOnUiThread { appendReport(text) }
             }
             val saved = saveReport(runLog.toString())
             runOnUiThread {
-                runButton.isEnabled = true
+                runButton.isEnabled = pickedUris.isNotEmpty()
                 showStatus("Done. Report saved to $saved")
             }
         }
@@ -257,5 +271,6 @@ class SdkTestActivity : AppCompatActivity() {
         private const val DEFAULT_ASSET = "sdk-config.default.json"
         private const val CONFIG_FILE_NAME = "sdk-config.json"
         private const val MAX_IMAGES = 20
+        private const val TEST_IMAGES_DIR = "test-images"
     }
 }

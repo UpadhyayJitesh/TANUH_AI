@@ -379,6 +379,8 @@ data class DiagnosticsSpec(
     val referencePipeline: String?,
     val verifySha256: Boolean,
     val measurePss: Boolean,
+    /** Write a parity trace (diag/ParityTrace.kt) per image, comparable line by line with avni's. */
+    val parityTrace: Boolean,
 ) {
     companion object {
         fun parse(o: JSONObject) = DiagnosticsSpec(
@@ -387,6 +389,7 @@ data class DiagnosticsSpec(
             referencePipeline = o.optString("reference_pipeline").ifBlank { null },
             verifySha256 = o.optBoolean("verify_sha256", false),
             measurePss = o.optBoolean("measure_pss", true),
+            parityTrace = o.optBoolean("parity_trace", false),
         )
     }
 }

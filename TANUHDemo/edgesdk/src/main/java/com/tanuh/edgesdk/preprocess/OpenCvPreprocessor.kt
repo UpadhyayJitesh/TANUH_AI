@@ -5,6 +5,7 @@ import com.tanuh.edgesdk.config.ImageInputSpec
 import com.tanuh.edgesdk.config.StepSpec
 import com.tanuh.edgesdk.config.optDoubleArray
 import com.tanuh.edgesdk.config.optIntPair
+import com.tanuh.edgesdk.diag.ParityTrace
 import com.tanuh.edgesdk.engine.InputTensor
 import org.opencv.android.Utils
 import org.opencv.core.Core
@@ -61,10 +62,10 @@ class TensorResult(
  * |                 | interpolation nearest / linear / cubic / area / lanczos; pad_value      |
  * | `center_crop`   | size [w,h]                                                             |
  * | `gaussian_blur` | ksize (odd int), sigma                                                 |
- * | `gray_world`    | mean_target (per-channel mean -> target; mean taken over whole image)   |
+ * | `gray_world`    | mean_target; precision float32 (numpy, default) / float64 (avni legacy)   |
  * | `clip`          | min, max                                                               |
- * | `round`         | decimals (round-half-to-even, float32, like np.round)                   |
- * | `to_uint8`      | (none) - rint + saturate, like cv2.convertScaleAbs                     |
+ * | `round`         | decimals; mode half_even (np.round, default) / half_up (Java Math.round)  |
+ * | `to_uint8`      | mode half_even (cv2.convertScaleAbs, default) / half_up / truncate       |
  * | `scale`         | divide_by  or  multiply  (converts to float32 first)                    |
  * | `normalize`     | mean [..], std [..], order RGB/BGR (order the mean/std are listed in)    |
  *
@@ -96,6 +97,7 @@ class OpenCvPreprocessor(private val spec: ImageInputSpec) {
         timings += "bitmap->Mat ${cur.cols()}x${cur.rows()}" to ms(t0)
 
         var preview: Mat? = null
+        var canvasTraced = false
         try {
             for ((index, step) in spec.steps.withIndex()) {
                 t0 = System.nanoTime()
@@ -103,6 +105,16 @@ class OpenCvPreprocessor(private val spec: ImageInputSpec) {
                 if (next !== cur) cur.release()
                 cur = next
                 timings += "${index + 1}. ${step.op} -> ${describe(cur)}" to ms(t0)
+                // Parity trace: the 8-bit canvas right after the first resize (avni's resizeToCanvas output).
+                if (step.op == "resize" && !canvasTraced && cur.type() == CvType.CV_8UC3) {
+                    ParityTrace.currentRecord()?.let { t ->
+                        val m = if (cur.isContinuous) cur else cur.clone()
+                        val bgr = ByteArray(m.cols() * m.rows() * 3).also { m.get(0, 0, it) }
+                        if (m !== cur) m.release()
+                        t.canvas(cur.cols(), cur.rows(), bgr)
+                    }
+                    canvasTraced = true
+                }
                 if (wantPreview && cur.type() == CvType.CV_8UC3 && cur.cols() * cur.rows() <= MAX_PREVIEW_PIXELS) {
                     preview?.release(); preview = cur.clone()
                 }
@@ -110,7 +122,7 @@ class OpenCvPreprocessor(private val spec: ImageInputSpec) {
 
             t0 = System.nanoTime()
             if (cur.depth() != CvType.CV_32F) {
-                notes += "Pipeline ended on ${describe(cur)}; converted to float32 without scaling. Add a 'scale' step if the model expects [0,1]."
+                if (cur.depth() == CvType.CV_8U) notes += "Pipeline ended on ${describe(cur)}; converted to float32 without scaling. Add a 'scale' step if the model expects [0,1]."
                 val f = Mat(); cur.convertTo(f, CvType.CV_32FC3); cur.release(); cur = f
             }
             if (!cur.isContinuous) { val c = cur.clone(); cur.release(); cur = c }
@@ -154,7 +166,12 @@ class OpenCvPreprocessor(private val spec: ImageInputSpec) {
             "gray_world" -> {
                 val target = p.optDouble("mean_target", 128.0)
                 val m = Core.mean(src)                           // per-channel mean over the whole image (padding included)
-                val f = toFloat(src)
+                // precision float32 (default) = numpy/QC notebook; float64 = avni "rounding": "legacy" arithmetic.
+                val f = when (p.optString("precision", "float32").lowercase()) {
+                    "float32" -> toFloat(src)
+                    "float64" -> toFloat64(src)
+                    else -> throw IllegalArgumentException("gray_world.precision must be float32 or float64")
+                }
                 val s = Scalar(
                     if (m.`val`[0] != 0.0) target / m.`val`[0] else 1.0,
                     if (m.`val`[1] != 0.0) target / m.`val`[1] else 1.0,
@@ -162,7 +179,8 @@ class OpenCvPreprocessor(private val spec: ImageInputSpec) {
                 )
                 notes += "gray_world mean B=%.3f G=%.3f R=%.3f scale B=%.5f G=%.5f R=%.5f".format(
                     m.`val`[0], m.`val`[1], m.`val`[2], s.`val`[0], s.`val`[1], s.`val`[2])
-                Core.multiply(f, s, f)                           // float32 * float32, as numpy does with a float32 array
+                ParityTrace.currentRecord()?.grayWorld(m.`val`[0], m.`val`[1], m.`val`[2], s.`val`[0], s.`val`[1], s.`val`[2])
+                Core.multiply(f, s, f)                           // float32: as numpy does with a float32 array; float64: as avni legacy
                 f
             }
 
@@ -176,23 +194,47 @@ class OpenCvPreprocessor(private val spec: ImageInputSpec) {
             "round" -> {
                 val factor = Math.pow(10.0, p.optInt("decimals", 1).toDouble())
                 val f = toFloat(src)
-                if (factor != 1.0) Core.multiply(f, Scalar.all(factor), f)
-                val i32 = Mat(); f.convertTo(i32, CvType.CV_32SC3)   // cvRound = round-half-to-even
-                i32.convertTo(f, CvType.CV_32FC3); i32.release()
-                if (factor != 1.0) Core.divide(f, Scalar.all(factor), f)
-                f
+                when (roundingMode(p)) {
+                    "half_even" -> {                                    // np.round: cvRound = round-half-to-even
+                        val type = f.type()
+                        if (factor != 1.0) Core.multiply(f, Scalar.all(factor), f)
+                        val i32 = Mat(); f.convertTo(i32, CvType.CV_32SC3)
+                        i32.convertTo(f, type); i32.release()
+                        if (factor != 1.0) Core.divide(f, Scalar.all(factor), f)
+                        f
+                    }
+                    "half_up" -> mapValues(f) { Math.floor(it * factor + 0.5) / factor }.also { f.release() }   // Java Math.round (avni legacy)
+                    else -> throw IllegalArgumentException("round.mode must be half_even or half_up")
+                }
             }
 
-            "to_uint8" -> Mat().also { src.convertTo(it, CvType.CV_8UC3) }   // rint + saturate to [0,255]
+            "to_uint8" -> when (roundingMode(p)) {
+                "half_even" -> Mat().also { src.convertTo(it, CvType.CV_8UC3) }   // rint + saturate (cv2.convertScaleAbs)
+                "half_up" -> roundedToU8(src) { Math.floor(it + 0.5) }              // avni legacy uint8_round=true
+                "truncate" -> roundedToU8(src) { Math.floor(it) }                   // avni legacy uint8_round=false
+                else -> throw IllegalArgumentException("to_uint8.mode must be half_even, half_up or truncate")
+            }
 
             "scale" -> {
+                // Exact IEEE arithmetic in the image's own precision (float32 unless the pipeline is in float64):
+                // value / float(divide_by)  = torchvision ToTensor (u8 / 255f), the QC path;
+                // value * float(multiply)   = avni legacy (u8 * float(1/255)).
+                // OpenCV's Core.multiply/divide by a constant is not plain float32 math, so it is not used here.
                 val f = toFloat(src)
-                when {
-                    p.has("divide_by") -> Core.divide(f, Scalar.all(p.getDouble("divide_by")), f)
-                    p.has("multiply") -> Core.multiply(f, Scalar.all(p.getDouble("multiply")), f)
+                val f64 = f.depth() == CvType.CV_64F
+                val out = when {
+                    p.has("divide_by") -> {
+                        val d = p.getDouble("divide_by"); val df = d.toFloat().toDouble()
+                        mapValues(f) { if (f64) it / d else it / df }
+                    }
+                    p.has("multiply") -> {
+                        val m = p.getDouble("multiply"); val mf = m.toFloat().toDouble()
+                        mapValues(f) { if (f64) it * m else it * mf }
+                    }
                     else -> throw IllegalArgumentException("scale step needs 'divide_by' or 'multiply'")
                 }
-                f
+                f.release()
+                out
             }
 
             "normalize" -> {
@@ -239,8 +281,39 @@ class OpenCvPreprocessor(private val spec: ImageInputSpec) {
         }
     }
 
+    /** Float copy; keeps float64 if the pipeline is already in float64, otherwise float32. */
     private fun toFloat(src: Mat): Mat =
-        if (src.depth() == CvType.CV_32F) src.clone() else Mat().also { src.convertTo(it, CvType.CV_32FC3) }
+        if (src.depth() == CvType.CV_32F || src.depth() == CvType.CV_64F) src.clone() else Mat().also { src.convertTo(it, CvType.CV_32FC3) }
+
+    private fun toFloat64(src: Mat): Mat = Mat().also { src.convertTo(it, CvType.CV_64FC3) }
+
+    private fun roundingMode(p: org.json.JSONObject) = p.optString("mode", "half_even").lowercase()
+
+    /** Applies [fn] to every value of a float32/float64 Mat in Kotlin (exact control over rounding). Same depth out. */
+    private fun mapValues(src: Mat, fn: (Double) -> Double): Mat {
+        val m = if (src.isContinuous) src else src.clone()
+        val out = Mat(m.rows(), m.cols(), m.type())
+        val n = (m.total() * m.channels()).toInt()
+        if (m.depth() == CvType.CV_64F) {
+            val a = DoubleArray(n); m.get(0, 0, a)
+            for (i in 0 until n) a[i] = fn(a[i])
+            out.put(0, 0, *a)          // Mat.put's double overload is vararg in OpenCV's Java API
+        } else {
+            val a = FloatArray(n); m.get(0, 0, a)
+            for (i in 0 until n) a[i] = fn(a[i].toDouble()).toFloat()
+            out.put(0, 0, a)
+        }
+        if (m !== src) m.release()
+        return out
+    }
+
+    /** Float Mat -> CV_8UC3 with the given integer rounding, saturated to [0, 255]. */
+    private fun roundedToU8(src: Mat, fn: (Double) -> Double): Mat {
+        val f = toFloat(src)
+        val r = mapValues(f) { fn(it).coerceIn(0.0, 255.0) }
+        f.release()
+        return Mat().also { r.convertTo(it, CvType.CV_8UC3); r.release() }   // values are already integral: exact
+    }
 
     private fun interpolation(name: String): Int = when (name.lowercase()) {
         "nearest" -> Imgproc.INTER_NEAREST
@@ -261,7 +334,7 @@ class OpenCvPreprocessor(private val spec: ImageInputSpec) {
     }
 
     private fun describe(m: Mat): String {
-        val depth = when (m.depth()) { CvType.CV_8U -> "u8"; CvType.CV_32F -> "f32"; CvType.CV_32S -> "i32"; else -> "d${m.depth()}" }
+        val depth = when (m.depth()) { CvType.CV_8U -> "u8"; CvType.CV_32F -> "f32"; CvType.CV_64F -> "f64"; CvType.CV_32S -> "i32"; else -> "d${m.depth()}" }
         return "${m.cols()}x${m.rows()} $depth"
     }
 

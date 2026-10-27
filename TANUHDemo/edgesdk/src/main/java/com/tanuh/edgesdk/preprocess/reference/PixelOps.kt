@@ -1,8 +1,8 @@
 /*
  * Copied verbatim from avni-client
  *   packages/openchs-android/android/app/src/main/java/com/openchsclient/preprocessing/PixelOps.kt
- * (package renamed only). Used as the parity reference for the JSON/OpenCV pipeline. Keep in sync
- * with avni when its preprocessing changes.
+ * (package renamed only; synced with [PE-138] P3 colour-profile handling). Used as the parity
+ * reference for the JSON/OpenCV pipeline. Keep in sync with avni when its preprocessing changes.
  */
 package com.tanuh.edgesdk.preprocess.reference
 
@@ -31,6 +31,28 @@ object PixelOps {
         val newW = Math.rint(srcW * scale).toInt().coerceIn(1, targetW)
         val newH = Math.rint(srcH * scale).toInt().coerceIn(1, targetH)
         return LetterboxGeometry(newW, newH, (targetW - newW) / 2, (targetH - newH) / 2)
+    }
+
+    /**
+     * Raw ARGB_8888 bitmap memory (as written by `Bitmap.copyPixelsToBuffer`: bytes R, G, B, A per
+     * pixel, rows [rowBytes] apart) → packed ARGB ints. Unlike `Bitmap.getPixels`, this performs no
+     * colour-space conversion, so a Display P3 photo yields the values stored in the file — what
+     * cv2.imread returns. Opaque images only (JPEG); alpha is passed through unchanged.
+     */
+    fun argbFromRgba8888(bytes: ByteArray, width: Int, height: Int, rowBytes: Int): IntArray {
+        require(rowBytes >= width * 4 && bytes.size >= rowBytes * (height - 1) + width * 4) { "buffer too small" }
+        val out = IntArray(width * height)
+        for (y in 0 until height) {
+            var o = y * rowBytes
+            val base = y * width
+            for (x in 0 until width) {
+                val r = bytes[o].toInt() and 0xFF; val g = bytes[o + 1].toInt() and 0xFF
+                val b = bytes[o + 2].toInt() and 0xFF; val a = bytes[o + 3].toInt() and 0xFF
+                out[base + x] = (a shl 24) or (r shl 16) or (g shl 8) or b
+                o += 4
+            }
+        }
+        return out
     }
 
     /** Paste [img] onto a (w, h) canvas filled with opaque [padRgb] (0 = black), top-left at (x0, y0). */

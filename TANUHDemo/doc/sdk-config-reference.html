@@ -89,6 +89,7 @@ blockquote { margin: 12px 0; padding: 8px 16px; border-left: 3px solid var(--acc
 <li><a href="#9-litert">9. litert</a></li>
 <li><a href="#10-diagnostics">10. diagnostics</a></li>
 <li><a href="#11-recipes">11. Recipes</a></li>
+<li><a href="#11b-reproducing-avnis-current-production-settings">11b. Reproducing avni's current production settings</a></li>
 <li><a href="#12-error-messages-you-may-see-on-apply">12. Error messages you may see on Apply</a></li>
 </ul>
 </div>
@@ -613,6 +614,7 @@ ImageNet-style models, together with <code>short_side</code>.</p>
 <th>param</th>
 <th>default</th>
 <th>current</th>
+<th>allowed</th>
 </tr>
 </thead>
 <tbody>
@@ -620,6 +622,13 @@ ImageNet-style models, together with <code>short_side</code>.</p>
 <td><code>mean_target</code></td>
 <td><code>128</code></td>
 <td><code>128</code></td>
+<td>any &gt; 0</td>
+</tr>
+<tr>
+<td><code>precision</code></td>
+<td><code>float32</code></td>
+<td><code>float32</code></td>
+<td><code>float32</code> (numpy / QC notebook), <code>float64</code> (avni's <code>rounding: legacy</code> arithmetic)</td>
 </tr>
 </tbody>
 </table>
@@ -673,13 +682,35 @@ ImageNet-style models, together with <code>short_side</code>.</p>
 <td><code>1</code></td>
 <td>0, 1, 2, …</td>
 </tr>
+<tr>
+<td><code>mode</code></td>
+<td><code>half_even</code></td>
+<td><code>half_even</code></td>
+<td><code>half_even</code> (<code>np.round</code>, QC), <code>half_up</code> (Java <code>Math.round</code>, avni legacy)</td>
+</tr>
 </tbody>
 </table>
 <p>Rounds to N decimals, round-half-to-even like <code>np.round</code> (137.64 → 137.6). It serves no visual
 purpose; it's there because the QC notebook does it. Removing it or changing <code>decimals</code> shifts some
 values by a fraction of a level, giving a tiny logit change and losing exact parity.</p>
 <h4 id="to_uint8"><code>to_uint8</code></h4>
-<p>No parameters. Rounds to whole numbers and limits to 0–255 (like <code>cv2.convertScaleAbs</code>). After it
+<table>
+<thead>
+<tr>
+<th>param</th>
+<th>default</th>
+<th>allowed</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>mode</code></td>
+<td><code>half_even</code></td>
+<td><code>half_even</code> (<code>cv2.convertScaleAbs</code>, QC), <code>half_up</code> (avni legacy <code>uint8_round: true</code>), <code>truncate</code> (avni legacy <code>uint8_round: false</code>)</td>
+</tr>
+</tbody>
+</table>
+<p>Rounds to whole numbers and limits to 0–255. After it
 the image is <code>u8</code>. The preview thumbnail shows the last <code>u8</code> state, which is what the model "sees".</p>
 <h4 id="scale"><code>scale</code></h4>
 <table>
@@ -1174,6 +1205,13 @@ Switch them off in production.</p>
 <td>Validate fingerprints each model file in 64 KB chunks and compares it with <code>models[].sha256</code>. Catches corrupted or wrong files. Takes ≈1 s per 17 MB file.</td>
 </tr>
 <tr>
+<td><code>parity_trace</code></td>
+<td><code>false</code></td>
+<td><code>true</code></td>
+<td><code>true</code> / <code>false</code></td>
+<td>Writes a line-by-line trace of every intermediate value (input file hash, decoded pixels hash, canvas hash and means, gray-world values, tensor hash and stats, model sha256 and logits) to <code>&lt;external files&gt;/parity-traces/sdk-*.txt</code>, in the same format avni's debug build writes. <code>tools/parity/compare_traces.py</code> compares the two stage by stage. Costs ≈0.1–0.3 s per image.</td>
+</tr>
+<tr>
 <td><code>compare_with_reference</code></td>
 <td><code>false</code></td>
 <td><code>true</code></td>
@@ -1210,6 +1248,11 @@ Switch them off in production.</p>
 <td><code>size</code>, <code>resize_mode</code>, <code>pad_value</code>, <code>interpolation</code></td>
 <td><code>[256,256]</code>, <code>letterbox</code>, <code>0</code>, <code>cubic</code></td>
 <td>the <code>resize</code> step</td>
+</tr>
+<tr>
+<td><code>ignore_color_profile</code></td>
+<td><code>true</code></td>
+<td>always on in the SDK: OpenCV reads the bitmap's raw stored values, so Display-P3 photos are not converted to sRGB (avni [PE-138])</td>
 </tr>
 <tr>
 <td><code>mean_target</code></td>
@@ -1285,6 +1328,22 @@ Switch them off in production.</p>
 <p>The report then shows an <code>[oral-image]</code> block and a <code>[quality-check]</code> block per photo. The photo is
 decoded once and shared, because both pipelines use the same <code>decode</code> settings.</p>
 <hr />
+<h2 id="11b-reproducing-avnis-current-production-settings">11b. Reproducing avni's current production settings</h2>
+<p><code>app/src/main/assets/sdk-config.avni-current.json</code> reproduces what avni does on the test phone today. Its
+synced server payload (logcat <code>MeanTargetBgrRounded</code>) has <code>resize=stretch</code>, <code>rounding=legacy</code>,
+<code>uint8Round=true</code> and <code>ignoreColorProfile=false</code>. The same SDK, with only a different JSON, gives the
+same model input as avni:</p>
+<pre><code class="language-json">&quot;steps&quot;: [
+  { &quot;op&quot;: &quot;resize&quot;, &quot;size&quot;: [256, 256], &quot;mode&quot;: &quot;stretch&quot;, &quot;interpolation&quot;: &quot;cubic&quot; },
+  { &quot;op&quot;: &quot;gray_world&quot;, &quot;mean_target&quot;: 128, &quot;precision&quot;: &quot;float64&quot; },
+  { &quot;op&quot;: &quot;clip&quot;, &quot;min&quot;: 0, &quot;max&quot;: 255 },
+  { &quot;op&quot;: &quot;round&quot;, &quot;decimals&quot;: 1, &quot;mode&quot;: &quot;half_up&quot; },
+  { &quot;op&quot;: &quot;to_uint8&quot;, &quot;mode&quot;: &quot;half_up&quot; },
+  { &quot;op&quot;: &quot;scale&quot;, &quot;multiply&quot;: 0.00392156862745098 }
+]
+</code></pre>
+<p><code>sdk-config.default.json</code> is the QC-notebook pipeline (letterbox, numpy rounding). Switching between the
+two is only a JSON change.</p>
 <h2 id="12-error-messages-you-may-see-on-apply">12. Error messages you may see on Apply</h2>
 <table>
 <thead>

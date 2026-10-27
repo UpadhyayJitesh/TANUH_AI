@@ -249,9 +249,10 @@ Smooths noise. Not used today. Adding it changes every pixel, so logits change.
 
 #### `gray_world`
 
-| param | default | current |
-|---|---|---|
-| `mean_target` | `128` | `128` |
+| param | default | current | allowed |
+|---|---|---|---|
+| `mean_target` | `128` | `128` | any > 0 |
+| `precision` | `float32` | `float32` | `float32` (numpy / QC notebook), `float64` (avni's `rounding: legacy` arithmetic) |
 
 Lighting and white-balance correction: it computes each colour's average over the whole image
 (letterbox bars included, as the notebook does), then scales that colour so its average becomes
@@ -278,6 +279,7 @@ Limits values to [min, max]. Needed after `gray_world`, whose scaling can push b
 | param | default | current | allowed |
 |---|---|---|---|
 | `decimals` | `1` | `1` | 0, 1, 2, … |
+| `mode` | `half_even` | `half_even` | `half_even` (`np.round`, QC), `half_up` (Java `Math.round`, avni legacy) |
 
 Rounds to N decimals, round-half-to-even like `np.round` (137.64 → 137.6). It serves no visual
 purpose; it's there because the QC notebook does it. Removing it or changing `decimals` shifts some
@@ -285,7 +287,11 @@ values by a fraction of a level, giving a tiny logit change and losing exact par
 
 #### `to_uint8`
 
-No parameters. Rounds to whole numbers and limits to 0–255 (like `cv2.convertScaleAbs`). After it
+| param | default | allowed |
+|---|---|---|
+| `mode` | `half_even` | `half_even` (`cv2.convertScaleAbs`, QC), `half_up` (avni legacy `uint8_round: true`), `truncate` (avni legacy `uint8_round: false`) |
+
+Rounds to whole numbers and limits to 0–255. After it
 the image is `u8`. The preview thumbnail shows the last `u8` state, which is what the model "sees".
 
 #### `scale`
@@ -452,6 +458,7 @@ Switch them off in production.
 |---|---|---|---|---|
 | `measure_pss` | `true` | `true` | `true` / `false` | Adds the process's total memory (PSS) to memory lines (`PSS=225.5 MB`). PSS is what Android uses when deciding to kill apps. Costs a few ms per reading. |
 | `verify_sha256` | `false` | `false` | `true` / `false` | Validate fingerprints each model file in 64 KB chunks and compares it with `models[].sha256`. Catches corrupted or wrong files. Takes ≈1 s per 17 MB file. |
+| `parity_trace` | `false` | `true` | `true` / `false` | Writes a line-by-line trace of every intermediate value (input file hash, decoded pixels hash, canvas hash and means, gray-world values, tensor hash and stats, model sha256 and logits) to `<external files>/parity-traces/sdk-*.txt`, in the same format avni's debug build writes. `tools/parity/compare_traces.py` compares the two stage by stage. Costs ≈0.1–0.3 s per image. |
 | `compare_with_reference` | `false` | `true` | `true` / `false` | Also runs avni's Kotlin preprocessing on the same photo and compares tensors number by number (`0 / 196608 elements differ`). If any differ, it also prints both logits per model. Costs ≈70–290 ms and ≈41 MB of Java heap per photo (avni's own cost). |
 | `reference_pipeline` | first image pipeline that runs | `oral-image` | a pipeline name | Which pipeline the comparison applies to. |
 | `reference_params` | none (comparison skipped) | avni's settings | avni's `input.params` format | The recipe avni's code is run with. It's copied from avni's `tanuh-ensemble-override.json`. It must describe the same recipe as the pipeline's `steps` to show 0 differences. Changing a step and leaving this alone shows how far your change moved the input from production. |
@@ -461,6 +468,7 @@ Switch them off in production.
 | key | current | SDK equivalent |
 |---|---|---|
 | `size`, `resize_mode`, `pad_value`, `interpolation` | `[256,256]`, `letterbox`, `0`, `cubic` | the `resize` step |
+| `ignore_color_profile` | `true` | always on in the SDK: OpenCV reads the bitmap's raw stored values, so Display-P3 photos are not converted to sRGB (avni [PE-138]) |
 | `mean_target` | `128` | `gray_world` |
 | `round_decimals`, `rounding` | `1`, `numpy` | `round` (half-to-even) |
 | `uint8_cast`, `uint8_round` | `true`, `true` | `to_uint8` |
@@ -535,6 +543,27 @@ The report then shows an `[oral-image]` block and a `[quality-check]` block per 
 decoded once and shared, because both pipelines use the same `decode` settings.
 
 ---
+
+## 11b. Reproducing avni's current production settings
+
+`app/src/main/assets/sdk-config.avni-current.json` reproduces what avni does on the test phone today. Its
+synced server payload (logcat `MeanTargetBgrRounded`) has `resize=stretch`, `rounding=legacy`,
+`uint8Round=true` and `ignoreColorProfile=false`. The same SDK, with only a different JSON, gives the
+same model input as avni:
+
+```json
+"steps": [
+  { "op": "resize", "size": [256, 256], "mode": "stretch", "interpolation": "cubic" },
+  { "op": "gray_world", "mean_target": 128, "precision": "float64" },
+  { "op": "clip", "min": 0, "max": 255 },
+  { "op": "round", "decimals": 1, "mode": "half_up" },
+  { "op": "to_uint8", "mode": "half_up" },
+  { "op": "scale", "multiply": 0.00392156862745098 }
+]
+```
+
+`sdk-config.default.json` is the QC-notebook pipeline (letterbox, numpy rounding). Switching between the
+two is only a JSON change.
 
 ## 12. Error messages you may see on Apply
 

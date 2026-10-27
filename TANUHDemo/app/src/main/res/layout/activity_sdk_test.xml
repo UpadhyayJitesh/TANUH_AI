@@ -154,6 +154,14 @@
                 android:text="@string/sdk_run" />
         </LinearLayout>
 
+        <Button
+            android:id="@+id/runFolderButton"
+            style="?attr/materialButtonOutlinedStyle"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="4dp"
+            android:text="@string/sdk_run_folder" />
+
         <TextView
             android:id="@+id/pickedText"
             android:layout_width="match_parent"

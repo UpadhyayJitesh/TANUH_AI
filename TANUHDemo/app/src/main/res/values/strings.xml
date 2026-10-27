@@ -55,6 +55,7 @@
     <string name="sdk_unload">Unload</string>
     <string name="sdk_pick">Pick images</string>
     <string name="sdk_run">Run</string>
+    <string name="sdk_run_folder">Run all images in test-images folder</string>
     <string name="sdk_no_images">No images picked yet</string>
     <string name="sdk_report_label">Report</string>
     <string name="sdk_copy">Copy report</string>

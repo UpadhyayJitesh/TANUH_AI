@@ -1,7 +1,9 @@
 package com.tanuh.edgesdk.preprocess.reference
 
 import android.graphics.Bitmap
+import android.os.Build
 import org.json.JSONObject
+import java.nio.ByteBuffer
 
 /**
  * avni-client's `mean-target-bgr-rounded` preprocessor (Preprocessors.kt, Oct 2026 QC version),
@@ -25,6 +27,7 @@ object AvniReferencePreprocessor {
         val interpolation = params.optString("interpolation", "bilinear")
         val resizeMode = params.optString("resize_mode", "stretch")
         val padValue = params.optInt("pad_value", 0)
+        val ignoreColorProfile = params.optBoolean("ignore_color_profile", false)
         val rounding = params.optString("rounding", "legacy")
         val p = MeanTargetMath.Params(
             meanTarget = params.optDouble("mean_target", 128.0),
@@ -36,31 +39,40 @@ object AvniReferencePreprocessor {
             channelOrder = params.optString("channel_order", "BGR"),
             layout = params.optString("layout", "CHW"),
         )
-        val canvas = resizeToCanvas(bitmap, w, h, interpolation, resizeMode, padValue)
+        val canvas = resizeToCanvas(bitmap, w, h, interpolation, resizeMode, padValue, ignoreColorProfile)
         return Result(MeanTargetMath.toTensor(canvas, p), longArrayOf(1, 3, h.toLong(), w.toLong()))
     }
 
-    private fun Bitmap.toArgbImage(): ArgbImage {
+    /** avni [PE-138]: with ignoreColorProfile, a non-sRGB (e.g. Display P3) bitmap's raw stored values are used, like cv2.imread. */
+    private fun Bitmap.toArgbImage(ignoreColorProfile: Boolean = false): ArgbImage {
+        if (ignoreColorProfile && Build.VERSION.SDK_INT >= Build.VERSION_CODES.O && config == Bitmap.Config.ARGB_8888) {
+            val cs = colorSpace
+            if (cs != null && !cs.isSrgb) {
+                val buf = ByteBuffer.allocate(rowBytes * height)
+                copyPixelsToBuffer(buf)
+                return ArgbImage(width, height, PixelOps.argbFromRgba8888(buf.array(), width, height, rowBytes))
+            }
+        }
         val px = IntArray(width * height)
         getPixels(px, 0, width, 0, 0, width, height)
         return ArgbImage(width, height, px)
     }
 
-    private fun resize(src: Bitmap, w: Int, h: Int, interpolation: String): ArgbImage {
-        if (src.width == w && src.height == h) return src.toArgbImage()
+    private fun resize(src: Bitmap, w: Int, h: Int, interpolation: String, icp: Boolean): ArgbImage {
+        if (src.width == w && src.height == h) return src.toArgbImage(icp)
         return when (interpolation) {
-            "cubic" -> PixelOps.resizeCubicCv(src.toArgbImage(), w, h)
-            "nearest" -> Bitmap.createScaledBitmap(src, w, h, false).let { s -> s.toArgbImage().also { if (s !== src) s.recycle() } }
-            else -> Bitmap.createScaledBitmap(src, w, h, true).let { s -> s.toArgbImage().also { if (s !== src) s.recycle() } }
+            "cubic" -> PixelOps.resizeCubicCv(src.toArgbImage(icp), w, h)
+            "nearest" -> Bitmap.createScaledBitmap(src, w, h, false).let { s -> s.toArgbImage(icp).also { if (s !== src) s.recycle() } }
+            else -> Bitmap.createScaledBitmap(src, w, h, true).let { s -> s.toArgbImage(icp).also { if (s !== src) s.recycle() } }
         }
     }
 
-    private fun resizeToCanvas(src: Bitmap, w: Int, h: Int, interpolation: String, mode: String, padValue: Int): ArgbImage =
+    private fun resizeToCanvas(src: Bitmap, w: Int, h: Int, interpolation: String, mode: String, padValue: Int, icp: Boolean): ArgbImage =
         when (mode) {
-            "stretch" -> resize(src, w, h, interpolation)
+            "stretch" -> resize(src, w, h, interpolation, icp)
             "letterbox" -> {
                 val g = PixelOps.letterboxGeometry(src.width, src.height, w, h)
-                val fitted = resize(src, g.newW, g.newH, interpolation)
+                val fitted = resize(src, g.newW, g.newH, interpolation, icp)
                 val pad = padValue.coerceIn(0, 255)
                 PixelOps.pasteOnCanvas(fitted, w, h, g.offsetX, g.offsetY, (pad shl 16) or (pad shl 8) or pad)
             }

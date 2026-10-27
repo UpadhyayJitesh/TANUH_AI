@@ -11,6 +11,7 @@ import com.tanuh.edgesdk.config.ModelSpec
 import com.tanuh.edgesdk.config.PathVariables
 import com.tanuh.edgesdk.config.PipelineSpec
 import com.tanuh.edgesdk.diag.MemoryProbe
+import com.tanuh.edgesdk.diag.ParityTrace
 import com.tanuh.edgesdk.engine.InferenceEngine
 import com.tanuh.edgesdk.engine.InputTensor
 import com.tanuh.edgesdk.engine.OnnxEngine
@@ -22,6 +23,7 @@ import com.tanuh.edgesdk.preprocess.OpenCvPreprocessor
 import com.tanuh.edgesdk.preprocess.TensorResult
 import com.tanuh.edgesdk.preprocess.reference.AvniReferencePreprocessor
 import java.io.File
+import java.io.InputStream
 import java.security.DigestInputStream
 import java.security.MessageDigest
 import kotlin.math.abs
@@ -41,6 +43,8 @@ class EdgeSession private constructor(private val context: Context, val config: 
     private val engines = HashMap<EngineType, InferenceEngine>()
     private val handles = LinkedHashMap<String, InferenceEngine.Handle>()
     private val warmedUp = HashSet<String>()
+    /** Plaintext model SHA-256 per model name (only computed when parity_trace is on). avni keys models by it. */
+    private val modelSha = HashMap<String, String>()
     /** One image processor per image pipeline, built (and validated) eagerly at create time. */
     private val imageProcessors: Map<String, OpenCvPreprocessor> = config.pipelines
         .filterValues { it.input is ImageInputSpec }
@@ -135,6 +139,7 @@ class EdgeSession private constructor(private val context: Context, val config: 
         val t0 = System.nanoTime()
         val handle = engineFor(m.engine).load(m, strategy)
         val loadMs = (System.nanoTime() - t0) / 1e6
+        if (config.diagnostics.parityTrace) modelSha.getOrPut(m.name) { ParityTrace.sha256(m.file) }   // after timing
         val after = MemoryProbe.snapshot(withPss)
         handles[m.name] = handle
         return buildString {
@@ -155,13 +160,29 @@ class EdgeSession private constructor(private val context: Context, val config: 
 
     /** Runs every selected image-pipeline model on a gallery/content URI. */
     fun inferImage(uri: Uri, label: String): ImageReport =
-        inferImage(label) { spec -> ImageDecoder.decode(context, uri, spec) }
+        inferImage(label, { context.contentResolver.openInputStream(uri) ?: error("Cannot open $uri") }) { spec ->
+            ImageDecoder.decode(context, uri, spec)
+        }
 
     /** Runs every selected image-pipeline model on an image file. */
     fun inferImage(file: File, label: String = file.name): ImageReport =
-        inferImage(label) { spec -> ImageDecoder.decode(file, spec) }
+        inferImage(label, { file.inputStream() }) { spec -> ImageDecoder.decode(file, spec) }
 
-    private fun inferImage(label: String, decode: (ImageSpec) -> ImageDecoder.Decoded): ImageReport {
+    private fun inferImage(label: String, openSource: () -> InputStream, decode: (ImageSpec) -> ImageDecoder.Decoded): ImageReport {
+        val trace = if (config.diagnostics.parityTrace) ParityTrace.get(context, "sdk").begin() else null
+        try {
+            trace?.image(label)
+            trace?.let { t -> val (n, sha) = ParityTrace.sha256(openSource()); t.input(n, sha) }
+            return inferImageTraced(label, decode, trace)
+        } catch (t: Throwable) {
+            trace?.error(t.message)
+            throw t
+        } finally {
+            trace?.end()
+        }
+    }
+
+    private fun inferImageTraced(label: String, decode: (ImageSpec) -> ImageDecoder.Decoded, trace: ParityTrace.Record?): ImageReport {
         val sb = StringBuilder("━━ $label\n")
         val results = ArrayList<PipelineResult>()
         var preview: Bitmap? = null
@@ -176,12 +197,17 @@ class EdgeSession private constructor(private val context: Context, val config: 
                 val decoded = decodedBySpec.getOrPut(input.decode) {
                     val t0 = System.nanoTime()
                     decode(input.decode).also { d ->
+                        trace?.time("decode", (System.nanoTime() - t0) / 1e6)
+                        trace?.decode(d.bitmap, d.exifOrientation)
                         sb.appendLine("Decode %.0f ms: %dx%d source, EXIF orientation %d, sample %d → %dx%d".format(
                             (System.nanoTime() - t0) / 1e6, d.sourceWidth, d.sourceHeight, d.exifOrientation, d.sampleSize,
                             d.bitmap.width, d.bitmap.height))
                     }
                 }
-                val r = runImagePipeline(pipeline, models, decoded.bitmap, sb)
+                trace?.put("PIPELINE", "name" to pipeline.name)
+                trace?.put("PARAMS", "preprocessor" to "opencv-steps",
+                    "json" to org.json.JSONArray(input.steps.map { it.params }).toString())
+                val r = runImagePipeline(pipeline, models, decoded.bitmap, sb, trace)
                 results += r.first
                 if (preview == null) preview = r.second
             }
@@ -193,12 +219,15 @@ class EdgeSession private constructor(private val context: Context, val config: 
     }
 
     /** One image pipeline: preprocess once, run its models, decode, combine, optional avni parity. */
-    private fun runImagePipeline(pipeline: PipelineSpec, models: List<ModelSpec>, bitmap: Bitmap, sb: StringBuilder): Pair<PipelineResult, Bitmap?> {
+    private fun runImagePipeline(pipeline: PipelineSpec, models: List<ModelSpec>, bitmap: Bitmap, sb: StringBuilder,
+                                 trace: ParityTrace.Record?): Pair<PipelineResult, Bitmap?> {
         sb.appendLine("[${pipeline.name}] ${models.joinToString { it.name }}")
         val m0 = MemoryProbe.snapshot(withPss)
         val t0 = System.nanoTime()
         val tensor = imageProcessors.getValue(pipeline.name).run(bitmap)
         val preMs = (System.nanoTime() - t0) / 1e6
+        trace?.time("preprocess", preMs)
+        trace?.tensor(tensor.data, tensor.shape, tensor.layout, tensor.channelOrder)
         sb.appendLine("Preprocessing %.1f ms  ${MemoryProbe.snapshot(withPss).deltaFrom(m0)}".format(preMs))
         tensor.stepTimingsMs.forEach { (s, ms) -> sb.appendLine("   %-44s %7.1f ms".format(s, ms)) }
         tensor.notes.forEach { sb.appendLine("   · $it") }
@@ -212,12 +241,17 @@ class EdgeSession private constructor(private val context: Context, val config: 
             outputs[m.name] = out.first.values
             val v = Decoders.decode(m.name, out.first.values, pipeline.output)
             verdicts += v
+            trace?.let { t ->
+                t.time("inference_${m.name}", out.second)
+                t.model(modelSha.getOrPut(m.name) { ParityTrace.sha256(m.file) }, out.first.values.firstOrNull() ?: Float.NaN, v.label, m.name)
+            }
             sb.appendLine("%-10s %-9s p=%s  logit=%s  %.0f ms".format(
                 m.name, v.label, v.probability?.let { "%.4f".format(it) } ?: "-",
                 out.first.values.take(4).joinToString { "%.4f".format(it) }, out.second))
         }
         val combined = Decoders.combine(verdicts, pipeline.output, pipeline.combine)
         combined?.let { sb.appendLine("RESULT [${pipeline.name} · ${it.rule}]: ${it.label}  (${it.detail})") }
+        combined?.let { trace?.put("COMBINED", "rule" to it.rule, "label" to it.label) }
 
         val refPipeline = config.diagnostics.referencePipeline
             ?: config.selectedByPipeline().keys.firstOrNull { it.input is ImageInputSpec }?.name
