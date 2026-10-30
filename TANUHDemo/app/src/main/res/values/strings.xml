@@ -59,4 +59,51 @@
     <string name="sdk_no_images">No images picked yet</string>
     <string name="sdk_report_label">Report</string>
     <string name="sdk_copy">Copy report</string>
+
+    <!-- Launcher: anuPath BLE POC -->
+    <string name="launcher_option_anupath_title">3. anuPath nano A1C (Bluetooth)</string>
+    <string name="launcher_option_anupath_desc">Scan for an anuPath nano over BLE, connect, sync its clock and read HbA1c / glucose / hemoglobin results.</string>
+
+    <!-- anuPath BLE POC screen -->
+    <string name="anupath_title">anuPath nano A1C – BLE</string>
+    <string name="anupath_subtitle">Model PS-AN001-02 · Device Integration Guide V1.2 · no pairing required</string>
+    <string name="anupath_idle">Tap Scan. Turn the device on and keep it within a few metres.</string>
+    <string name="anupath_no_ble">This phone does not support Bluetooth Low Energy.</string>
+    <string name="anupath_bt_off">Bluetooth is off. Turn it on to scan.</string>
+    <string name="anupath_permission_denied">Bluetooth permission is required to find and connect to the device.</string>
+    <string name="anupath_location_off">On Android 11 and below, Location must be switched on for Bluetooth scanning to find devices.</string>
+    <string name="anupath_open_settings">Open settings</string>
+    <string name="anupath_section_scan">1. Find device</string>
+    <string name="anupath_scan">Scan</string>
+    <string name="anupath_stop_scan">Stop</string>
+    <string name="anupath_show_all">Show all BLE devices</string>
+    <string name="anupath_scanning">Scanning for \"anuPath nano\"…</string>
+    <string name="anupath_no_devices">No devices yet. Tap a device to connect.</string>
+    <string name="anupath_scan_done">Scan finished: %1$d device(s). Tap one to connect.</string>
+    <string name="anupath_scan_failed">Scan failed (error %1$d). Wait 30 s and try again.</string>
+    <string name="anupath_section_commands">2. Device commands</string>
+    <string name="anupath_last_record">Last record</string>
+    <string name="anupath_sync_all">Sync all</string>
+    <string name="anupath_record_id_hint">Record # (0–500)</string>
+    <string name="anupath_record_id_invalid">Enter a number from 0 to 500</string>
+    <string name="anupath_request_record">Request</string>
+    <string name="anupath_raw_hint">Raw hex, e.g. 02 00 01</string>
+    <string name="anupath_send_raw">Send hex</string>
+    <string name="anupath_raw_invalid">Enter hex bytes like 02 00 01</string>
+    <string name="anupath_set_time">Sync clock</string>
+    <string name="anupath_read_current">Read values</string>
+    <string name="anupath_reset">Reset memory</string>
+    <string name="anupath_reset_disabled">Reset memory (disabled)</string>
+    <string name="anupath_reset_confirm">This erases every stored result on the device. Continue?</string>
+    <string name="anupath_disconnect">Disconnect</string>
+    <string name="anupath_fetch_progress">Reading stored record #%1$d…</string>
+    <string name="anupath_fetch_done">Synced %1$d stored record(s) from the device.</string>
+    <string name="anupath_device_status">Device status: %1$s</string>
+    <string name="anupath_section_results">3. Results</string>
+    <string name="anupath_results_count">3. Results (%1$d)</string>
+    <string name="anupath_no_results">No results yet. Stored results are synced automatically after connecting; new tests appear as they finish.</string>
+    <string name="anupath_clear">Clear</string>
+    <string name="anupath_section_log">4. Raw BLE log</string>
+    <string name="anupath_copy_log">Copy</string>
+    <string name="anupath_log_copied">Log copied</string>
 </resources>

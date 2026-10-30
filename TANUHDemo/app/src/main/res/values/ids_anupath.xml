@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Views inside the programmatically built anuPath result cards. -->
+    <item name="anupathCardTitle" type="id" />
+    <item name="anupathCardValue" type="id" />
+    <item name="anupathCardMeta" type="id" />
+</resources>

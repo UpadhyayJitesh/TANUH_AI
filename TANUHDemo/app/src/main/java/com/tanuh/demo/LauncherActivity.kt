@@ -7,12 +7,14 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import com.google.android.material.card.MaterialCardView
+import com.tanuh.demo.anupath.AnuPathActivity
 import com.tanuh.demo.sdktest.SdkTestActivity
 
 /**
  * Entry screen. Lets the tester choose between:
  *  1. the original voice-memo flow (Vosk ASR -> MobileBERT sentiment), unchanged, and
- *  2. the SDK exploration flow (JSON-driven preprocessing + path-loaded ONNX/LiteRT models).
+ *  2. the SDK exploration flow (JSON-driven preprocessing + path-loaded ONNX/LiteRT models), and
+ *  3. the anuPath nano A1C Bluetooth (BLE) POC.
  */
 class LauncherActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -29,6 +31,9 @@ class LauncherActivity : AppCompatActivity() {
         }
         findViewById<MaterialCardView>(R.id.sdkTestCard).setOnClickListener {
             startActivity(Intent(this, SdkTestActivity::class.java))
+        }
+        findViewById<MaterialCardView>(R.id.anuPathCard).setOnClickListener {
+            startActivity(Intent(this, AnuPathActivity::class.java))
         }
     }
 }
