@@ -105,6 +105,9 @@ object AnuPathProtocol {
         return ByteArray(clean.length / 2) { clean.substring(it * 2, it * 2 + 2).toInt(16).toByte() }
     }
 
+    /** Short, human-friendly device ID: last two bytes of the MAC, e.g. "63:26" — matches a sticker label. */
+    fun shortId(address: String): String = address.takeLast(5)
+
     fun toHex(bytes: ByteArray?): String =
         bytes?.joinToString(" ") { "%02X".format(it.toInt() and 0xFF) } ?: ""
 
@@ -149,6 +152,8 @@ data class TestRecord(
     val unit: String,
     val dateTime: String,
     val receivedAtMillis: Long,
+    /** MAC address of the device the result came from (set by the app, not sent by the device). */
+    val deviceAddress: String = "",
 ) {
     val isComplete: Boolean
         get() = sequence.isNotEmpty() && name.isNotEmpty() && value.isNotEmpty() &&
@@ -159,7 +164,7 @@ data class TestRecord(
      * Sync all). Sequence + test time, so a sequence number reused after Reset memory is not
      * mistaken for an older result.
      */
-    val key: String get() = if (sequence.isEmpty()) "t$receivedAtMillis" else "$sequence|$dateTime"
+    val key: String get() = if (sequence.isEmpty()) "t$receivedAtMillis" else "$deviceAddress|$sequence|$dateTime"
 
     /** Test time parsed from the device string (guide example "22-09-2025 12:13"); null if unparseable. */
     val testedAtMillis: Long? get() = AnuPathProtocol.parseTestDateTime(dateTime)

@@ -138,4 +138,11 @@ class AnuPathProtocolTest {
         assertEquals(null, AnuPathProtocol.parseHex("2 0 1"))
         assertEquals(null, AnuPathProtocol.parseHex("zz"))
     }
+
+    @Test
+    fun shortIdIsLastTwoMacBytesAndKeyIncludesDevice() {
+        assertEquals("63:26", AnuPathProtocol.shortId("C0:9B:9E:3E:63:26"))
+        val r = TestRecord("1", "Glucose", "110", "mg/dL", "01-10-2026 09:00", 0L, "C0:9B:9E:3E:63:26")
+        assertTrue(r.key != r.copy(deviceAddress = "AA:BB:CC:DD:EE:FF").key)
+    }
 }

@@ -36,6 +36,17 @@
             android:textAppearance="@style/TextAppearance.MaterialComponents.Body2" />
 
         <TextView
+            android:id="@+id/anupathConnectedDevice"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:background="#E6F4EA"
+            android:padding="12dp"
+            android:textColor="#137333"
+            android:textAppearance="@style/TextAppearance.MaterialComponents.Body1"
+            android:visibility="gone" />
+
+        <TextView
             android:id="@+id/anupathDeviceStatus"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"

@@ -112,3 +112,7 @@ Spec: *anuPath nano Device Integration Guide for App Developers V1.2* (2025-07-3
   to show it again).
 - Reset memory is shown but disabled (`RESET_ENABLED = false` in `AnuPathActivity`) to avoid
   erasing results on the device during the POC.
+- Device identity shown in the UI: each scan row shows `ID <last 2 MAC bytes>` (e.g. `ID 63:26`) plus
+  the full MAC and RSSI; a green banner shows the connected device's name, ID and MAC; each result card
+  shows the ID of the device it came from. Results are de-duplicated per device.
+  (Device address is random-static type `C0:…` – confirm with vendor it is fixed for the unit's life.)

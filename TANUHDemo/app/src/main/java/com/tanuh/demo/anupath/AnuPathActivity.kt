@@ -58,6 +58,9 @@ class AnuPathActivity : AppCompatActivity(), AnuPathBleClient.Listener {
 
     private lateinit var statusText: TextView
     private lateinit var deviceStatusText: TextView
+    private lateinit var connectedDeviceText: TextView
+    private var connectedName: String = AnuPathProtocol.DEVICE_NAME
+    private var connectedAddress: String = ""
     private lateinit var scanButton: Button
     private lateinit var showAllCheck: CheckBox
     private lateinit var noDevicesText: TextView
@@ -125,6 +128,7 @@ class AnuPathActivity : AppCompatActivity(), AnuPathBleClient.Listener {
 
         statusText = findViewById(R.id.anupathStatus)
         deviceStatusText = findViewById(R.id.anupathDeviceStatus)
+        connectedDeviceText = findViewById(R.id.anupathConnectedDevice)
         scanButton = findViewById(R.id.anupathScan)
         showAllCheck = findViewById(R.id.anupathShowAll)
         noDevicesText = findViewById(R.id.anupathNoDevices)
@@ -276,7 +280,8 @@ class AnuPathActivity : AppCompatActivity(), AnuPathBleClient.Listener {
     }
 
     private fun addOrUpdateDevice(device: BluetoothDevice, name: String?, rssi: Int, isAnuPath: Boolean) {
-        val label = "${name ?: "(no name)"}\n${device.address}   RSSI $rssi dBm"
+        val label = "${name ?: "(no name)"}   ·   ID ${AnuPathProtocol.shortId(device.address)}\n" +
+            "MAC ${device.address}   ·   RSSI $rssi dBm"
         foundDevices[device.address]?.let { (_, row) ->
             row.text = label
             return
@@ -286,7 +291,7 @@ class AnuPathActivity : AppCompatActivity(), AnuPathBleClient.Listener {
             setPadding(dp(12), dp(10), dp(12), dp(10))
             setTypeface(typeface, if (isAnuPath) Typeface.BOLD else Typeface.NORMAL)
             setBackgroundResource(selectableBackground())
-            setOnClickListener { connectTo(device) }
+            setOnClickListener { connectTo(device, name) }
         }
         foundDevices[device.address] = device to row
         deviceList.addView(row)
@@ -294,9 +299,11 @@ class AnuPathActivity : AppCompatActivity(), AnuPathBleClient.Listener {
         if (isAnuPath) log("Found $name ${device.address} rssi=$rssi")
     }
 
-    private fun connectTo(device: BluetoothDevice) {
+    private fun connectTo(device: BluetoothDevice, name: String?) {
         if (!hasBlePermissions()) return startScanFlow()
         stopScan()
+        connectedName = name ?: AnuPathProtocol.DEVICE_NAME
+        connectedAddress = device.address
         assembler.reset()
         client.connect(device)
     }
@@ -341,6 +348,14 @@ class AnuPathActivity : AppCompatActivity(), AnuPathBleClient.Listener {
         if (state == AnuPathBleClient.State.DISCONNECTED) {
             assembler.flush()
             deviceStatusText.visibility = View.GONE
+            connectedDeviceText.visibility = View.GONE
+        } else {
+            connectedDeviceText.visibility = View.VISIBLE
+            connectedDeviceText.text = getString(
+                if (state == AnuPathBleClient.State.READY) R.string.anupath_connected_device
+                else R.string.anupath_connecting_device,
+                connectedName, AnuPathProtocol.shortId(connectedAddress), connectedAddress,
+            )
         }
     }
 
@@ -447,7 +462,8 @@ class AnuPathActivity : AppCompatActivity(), AnuPathBleClient.Listener {
 
     // ------------------------------------------------------------ results
 
-    private fun onRecord(record: TestRecord) {
+    private fun onRecord(incoming: TestRecord) {
+        val record = incoming.copy(deviceAddress = connectedAddress)
         recordsReceived++
         log("RECORD #${record.sequence} ${record.name} ${record.value} ${record.unit} @ ${record.dateTime}" +
             if (record.isComplete) "" else " (partial)")
@@ -493,7 +509,8 @@ class AnuPathActivity : AppCompatActivity(), AnuPathBleClient.Listener {
         card.findViewById<TextView>(R.id.anupathCardMeta).text = buildString {
             append("Record #").append(r.sequence.ifEmpty { "?" })
             append("   ·   Tested ").append(r.dateTime.ifEmpty { "?" })
-            append("\nReceived ").append(timeFormat.format(Date(r.receivedAtMillis)))
+            append("\nDevice ID ").append(AnuPathProtocol.shortId(r.deviceAddress))
+            append("   ·   Received ").append(timeFormat.format(Date(r.receivedAtMillis)))
             if (!r.isComplete) append("   ·   partial")
         }
     }

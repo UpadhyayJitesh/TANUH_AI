@@ -98,6 +98,8 @@
     <string name="anupath_disconnect">Disconnect</string>
     <string name="anupath_fetch_progress">Reading stored record #%1$d…</string>
     <string name="anupath_fetch_done">Synced %1$d stored record(s) from the device.</string>
+    <string name="anupath_connected_device">Connected: %1$s · ID %2$s\nMAC %3$s</string>
+    <string name="anupath_connecting_device">Connecting: %1$s · ID %2$s\nMAC %3$s</string>
     <string name="anupath_device_status">Device status: %1$s</string>
     <string name="anupath_section_results">3. Results</string>
     <string name="anupath_results_count">3. Results (%1$d)</string>
